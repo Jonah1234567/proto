@@ -1,0 +1,15 @@
+QWidget {
+    background-color: #f5f6fa;
+    font-family: "Segoe UI";
+}
+
+QWidget#Block {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 #74b9ff, stop:1 #a29bfe);
+    border-radius: 10px;
+    border: 2px solid #0984e3;
+    color: rgb(45, 52, 54);
+}
+
+QLabel {
+    color: rgb(45, 52, 54);
+}
