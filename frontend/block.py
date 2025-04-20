@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsTextItem
 from PyQt6.QtGui import QBrush, QPen, QColor, QPainter
 from PyQt6.QtCore import QRectF, QPointF, Qt
-from PyQt6.QtWidgets import QMenu, QDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel
+from PyQt6.QtWidgets import QWidget, QMenu, QDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel
 from PyQt6.QtGui import QAction
 
 class Block(QGraphicsItem):
@@ -59,22 +59,18 @@ class Block(QGraphicsItem):
         menu.exec(event.screenPos())
 
     def open_editor(self):
-        dialog = QDialog()
-        dialog.setWindowTitle(f"Edit {self.name}")
+        tab_widget = self.scene().views()[0].tab_widget
+
+        # Avoid duplicate tabs
+        for i in range(tab_widget.count()):
+            if tab_widget.tabText(i) == self.name:
+                tab_widget.setCurrentIndex(i)
+                return
+
+        editor = QWidget()
         layout = QVBoxLayout()
+        layout.addWidget(QLabel(f"Editing: {self.name}"))
+        editor.setLayout(layout)
 
-        layout.addWidget(QLabel("Block Name:"))
-        name_input = QLineEdit(self.name)
-        layout.addWidget(name_input)
-
-        save_button = QPushButton("Save")
-        layout.addWidget(save_button)
-
-        def save_changes():
-            self.name = name_input.text()
-            self.label.setPlainText(self.name)
-            dialog.accept()
-
-        save_button.clicked.connect(save_changes)
-        dialog.setLayout(layout)
-        dialog.exec()
+        tab_widget.addTab(editor, self.name)
+        tab_widget.setCurrentWidget(editor)

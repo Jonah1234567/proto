@@ -13,3 +13,18 @@ QWidget#Block {
 QLabel {
     color: rgb(45, 52, 54);
 }
+
+QTabBar::tab {
+    color: black;
+    border: 2px solid black;
+    border-radius: 6px;
+    padding: 8px 16px;
+    margin-right: 4px;
+    background-color: white;
+}
+
+QTabBar::tab:selected {
+    background-color: #dfe6e9;
+    font-weight: bold;
+    border-color: #2d3436;
+}

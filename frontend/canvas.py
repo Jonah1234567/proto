@@ -4,8 +4,9 @@ from PyQt6.QtCore import Qt, QPointF
 from block import Block
 
 class Canvas(QGraphicsView):
-    def __init__(self):
+    def __init__(self, tab_widget):
         super().__init__()
+        self.tab_widget = tab_widget
         self.blocks = []
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
 
