@@ -41,7 +41,9 @@ class MainWindow(QMainWindow):
             }
         """)
 
-    
+        self.tabs.setTabsClosable(True)
+        self.tabs.tabCloseRequested.connect(self.close_tab)
+
 
         self.tabs.addTab(canvas_tab, "Canvas")
         self.tabs.currentChanged.connect(self.on_tab_changed)
@@ -82,13 +84,17 @@ class MainWindow(QMainWindow):
         else:
             self.add_block_button.setText("💾 Save")
             self.add_block_button.clicked.disconnect()
-            print("hi")
             self.add_block_button.clicked.connect(lambda: self.save_editor_tab(index))
 
     def save_editor_tab(self, index):
         editor_widget = self.tabs.widget(index)
         if hasattr(editor_widget, "save_changes"):
             editor_widget.save_changes()
+    def close_tab(self, index):
+        # Prevent canvas tab from being closed
+        if self.tabs.tabText(index) == "Canvas":
+            return
+        self.tabs.removeTab(index)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

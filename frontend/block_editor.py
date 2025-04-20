@@ -25,21 +25,10 @@ class BlockEditor(QWidget):
         self.input_list = QListWidget()
         self.layout.addWidget(self.input_list)
 
-        self.add_input_btn = QPushButton("+ Add Input")
-        self.add_input_btn.clicked.connect(self.add_input)
-        self.layout.addWidget(self.add_input_btn)
 
         self.layout.addWidget(QLabel("Outputs:"))
         self.output_list = QListWidget()
         self.layout.addWidget(self.output_list)
-
-        self.add_output_btn = QPushButton("+ Add Output")
-        self.add_output_btn.clicked.connect(self.add_output)
-        self.layout.addWidget(self.add_output_btn)
-
-        self.save_button = QPushButton("Save")
-        self.save_button.clicked.connect(self.save_changes)
-        self.layout.addWidget(self.save_button)
 
     def add_input(self):
         text, ok = QInputDialog.getText(self, "New Input", "Input name:")

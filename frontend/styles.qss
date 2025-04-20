@@ -14,17 +14,50 @@ QLabel {
     color: rgb(45, 52, 54);
 }
 
+QTabWidget::pane {
+    border: none;
+    padding: 0;
+}
+
+QTabBar {
+    background: transparent;
+}
+
 QTabBar::tab {
-    color: black;
-    border: 2px solid black;
-    border-radius: 6px;
+    background: #f0f0f0;
+    color: #2d3436;
     padding: 8px 16px;
     margin-right: 4px;
-    background-color: white;
+    border: 1px solid #dcdde1;
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    min-width: 100px;
 }
 
 QTabBar::tab:selected {
-    background-color: #dfe6e9;
-    font-weight: bold;
-    border-color: #2d3436;
+    background: #ffffff;
+    font-weight: 500;
+    border-color: #b2bec3;
+}
+
+QTabBar::tab:hover {
+    background: #e8e8e8;
+}
+
+QTabBar::close-button {
+    background: #ffffff;
+    border: 1px solid #b2bec3;
+    border-radius: 4px;
+    subcontrol-position: right;
+    width: 16px;
+    height: 16px;
+    margin-left: 6px;
+    image: url(:/qt-project.org/styles/commonstyle/images/standardbutton-close-16.png);
+}
+
+QTabBar::close-button:hover {
+    background-color: #e17055;
+    border: 1px solid #d63031;
+    border-radius: 4px;
 }

@@ -53,9 +53,16 @@ class Block(QGraphicsItem):
 
     def contextMenuEvent(self, event):
         menu = QMenu()
+
         edit_action = QAction("Edit Block")
+        delete_action = QAction("Delete Block")
+
         menu.addAction(edit_action)
+        menu.addAction(delete_action)
+
         edit_action.triggered.connect(self.open_editor)
+        delete_action.triggered.connect(self.delete_block)
+
         menu.exec(event.screenPos())
 
     def open_editor(self):
@@ -68,3 +75,8 @@ class Block(QGraphicsItem):
         editor = BlockEditor(self, self.tab_widget)
         self.tab_widget.addTab(editor, self.name)
         self.tab_widget.setCurrentWidget(editor)
+
+    def delete_block(self):
+        scene = self.scene()
+        if scene:
+            scene.removeItem(self)
