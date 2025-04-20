@@ -60,7 +60,7 @@ class Canvas(QGraphicsView):
 
     def add_block(self):
         name = f"Block {len(self.blocks) + 1}"
-        block = Block(name)
+        block = Block(name, self.tab_widget)  # ✅ pass tab widget
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
         self.blocks.append(block)

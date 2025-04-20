@@ -41,8 +41,10 @@ class MainWindow(QMainWindow):
             }
         """)
 
-        self.tabs.addTab(canvas_tab, "Canvas")
+    
 
+        self.tabs.addTab(canvas_tab, "Canvas")
+        self.tabs.currentChanged.connect(self.on_tab_changed)
         # === Bottom Buttons ===
         bottom_row = QHBoxLayout()
         bottom_row.addStretch()
@@ -70,6 +72,23 @@ class MainWindow(QMainWindow):
                 self.setStyleSheet(f.read())
         except Exception as e:
             print("Could not load stylesheet:", e)
+
+    def on_tab_changed(self, index):
+        tab_name = self.tabs.tabText(index)
+        if tab_name == "Canvas":
+            self.add_block_button.setText("➕ Add Block")
+            self.add_block_button.clicked.disconnect()
+            self.add_block_button.clicked.connect(self.canvas.add_block)
+        else:
+            self.add_block_button.setText("💾 Save")
+            self.add_block_button.clicked.disconnect()
+            print("hi")
+            self.add_block_button.clicked.connect(lambda: self.save_editor_tab(index))
+
+    def save_editor_tab(self, index):
+        editor_widget = self.tabs.widget(index)
+        if hasattr(editor_widget, "save_changes"):
+            editor_widget.save_changes()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
