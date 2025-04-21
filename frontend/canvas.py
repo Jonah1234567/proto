@@ -3,6 +3,7 @@ from PyQt6.QtGui import QPainter, QColor, QWheelEvent, QPen
 from PyQt6.QtCore import Qt, QPointF
 from block import Block
 from connection import Connection
+from connection import ConnectionLine
 
 
 class Canvas(QGraphicsView):
@@ -11,6 +12,8 @@ class Canvas(QGraphicsView):
 
         self.tab_widget = tab_widget
         self.blocks = []
+        self.connections = []  # 🔗 Keep track of all connections
+
         self.connection_start = None
         self.temp_line = None
 
@@ -37,6 +40,7 @@ class Canvas(QGraphicsView):
     def mousePressEvent(self, event):
         scene_pos = self.mapToScene(event.pos())
         item = self.scene.itemAt(scene_pos, self.transform())
+        print(f"Clicked item: {item}, type: {type(item)}")
 
         def get_block_parent(i):
             while i and not isinstance(i, Block):
@@ -73,6 +77,11 @@ class Canvas(QGraphicsView):
                     self._clear_temp_line()
 
         elif event.button() == Qt.MouseButton.RightButton:
+            print("hi")
+            if isinstance(item, ConnectionLine):
+                print("📌 Right-clicked connection line in canvas")
+                item.contextMenuEvent(event)  # Manually invoke the context menu
+                return
             self._panning = True
             self._pan_start = event.position()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
@@ -118,6 +127,8 @@ class Canvas(QGraphicsView):
     def create_connection(self, start_block, end_block):
         print(f"📍 Drawing connection from {start_block.name} to {end_block.name}")
         connection = Connection(start_block, end_block, self.scene)
+        self.connections.append(connection)
+
 
 
     def cancel_connection(self):

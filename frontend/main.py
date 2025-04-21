@@ -62,6 +62,21 @@ class MainWindow(QMainWindow):
         """)
         self.add_block_button.setCursor(Qt.CursorShape.PointingHandCursor)
 
+        self.run_button = QPushButton("▶ Run")
+        self.run_button.setFixedWidth(200)
+        self.run_button.setStyleSheet("""
+            font-size: 16px;
+            padding: 10px;
+            color: black;
+            border: 2px solid black;
+            border-radius: 8px;
+        """)
+        self.run_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.run_button.clicked.connect(self.run_blocks)
+
+        bottom_row.addWidget(self.run_button)
+
+
         self.add_block_button.clicked.connect(self.canvas.add_block)
 
         bottom_row.addWidget(self.add_block_button)
@@ -95,6 +110,62 @@ class MainWindow(QMainWindow):
         if self.tabs.tabText(index) == "Canvas":
             return
         self.tabs.removeTab(index)
+
+    def run_blocks(self):
+        print("▶ Executing all blocks...")
+
+        canvas = self.canvas
+        blocks = canvas.blocks
+        connections = canvas.connections
+
+        # Build adjacency + dependency graph
+        incoming_map = {block: [] for block in blocks}
+        outgoing_map = {block: [] for block in blocks}
+
+        for conn in connections:
+            incoming_map[conn.end_block].append(conn.start_block)
+            outgoing_map[conn.start_block].append(conn.end_block)
+
+        # Topological sort
+        sorted_blocks = []
+        visited = set()
+
+        sorted_blocks = []
+        visited = set()
+
+        def visit(block):
+            if block in visited:
+                return
+            visited.add(block)
+            for child in outgoing_map.get(block, []):
+                visit(child)
+            sorted_blocks.insert(0, block)  # insert at front to maintain topological order
+
+
+        start_blocks = [b for b in blocks if getattr(b, "is_start_block", False)]
+        if not start_blocks:
+            print("⚠️ No start block selected. Aborting run.")
+            return
+
+        for start in start_blocks:
+            visit(start)
+
+        # Now execute blocks in order
+        context = {}
+        for block in sorted_blocks:
+            code = getattr(block, "code", "")
+            if not code:
+                continue
+
+            try:
+                exec(code, context)
+                if "run" in context and callable(context["run"]):
+                    result = context["run"]()
+                    print(f"🧠 Block [{block.name}] ran: result =", result)
+                    block._last_output = result  # store for passing if needed
+            except Exception as e:
+                print(f"❌ Error in block [{block.name}]:", e)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

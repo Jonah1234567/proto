@@ -18,7 +18,7 @@ class BlockEditor(QWidget):
         self.layout.addWidget(self.name_input)
 
         self.layout.addWidget(QLabel("Code:"))
-        self.code_input = QTextEdit("def run():\n    pass")
+        self.code_input = QTextEdit(block.code)
         self.layout.addWidget(self.code_input)
 
         self.layout.addWidget(QLabel("Inputs:"))
@@ -61,19 +61,21 @@ class BlockEditor(QWidget):
 
     def save_changes(self):
         self.block.name = self.name_input.text()
-        self.block.label.setPlainText(self.block.name)
         self.tab_widget.setTabText(self.tab_widget.indexOf(self), self.block.name)
+        self.block.update()
 
-        code = self.code_input.toPlainText()
+        print(self.code_input.toPlainText())
+        
+        self.block.code = self.code_input.toPlainText()
 
         inputs = []
-        match = re.search(r"def\s+\w+\((.*?)\)", code)
+        match = re.search(r"def\s+\w+\((.*?)\)", self.block.code)
         if match:
             args = match.group(1)
             inputs = [arg.strip() for arg in args.split(",") if arg.strip()]
 
         outputs = []
-        return_match = re.search(r"return\s+(.*)", code)
+        return_match = re.search(r"return\s+(.*)", self.block.code)
         if return_match:
             raw_out = return_match.group(1)
             outputs = [out.strip() for out in raw_out.split(",") if out.strip()]
@@ -88,3 +90,6 @@ class BlockEditor(QWidget):
 
         self.block.inputs = inputs
         self.block.outputs = outputs
+        self.block.update()
+        
+

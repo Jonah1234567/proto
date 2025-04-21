@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QGraphicsObject, QGraphicsTextItem, QGraphicsEllipseItem, QMenu, QGraphicsItem
+    QGraphicsObject, QGraphicsTextItem, QGraphicsEllipseItem, QMenu, QGraphicsItem, QListWidget, QTextEdit
 )
 from PyQt6.QtGui import QBrush, QPen, QColor, QPainter, QAction
 from PyQt6.QtCore import QRectF, QPointF, Qt
@@ -9,7 +9,12 @@ from block_editor import BlockEditor
 class Block(QGraphicsObject):
     def __init__(self, name, tab_widget):
         super().__init__()
+        
         self.name = name
+        self.code = ""
+        self.input_list = []
+        self.output_list = []
+
         self.tab_widget = tab_widget
         self.width = 140
         self.height = 70
@@ -17,6 +22,8 @@ class Block(QGraphicsObject):
         self._drag_offset = QPointF()
         self.incoming_connections = []
         self.outgoing_connections = []
+        self.is_start_block = False
+
 
 
         self.setAcceptHoverEvents(True)
@@ -48,6 +55,9 @@ class Block(QGraphicsObject):
         # Draw the block background
         painter.setBrush(QBrush(QColor("#74b9ff")))
         painter.setPen(QPen(QColor("#0984e3"), 2))
+        if self.is_start_block:
+            painter.setPen(QPen(QColor("green"), 3))
+
         painter.drawRoundedRect(0, 0, self.width, self.height, 10, 10)
 
         # Draw the block name
@@ -96,7 +106,12 @@ class Block(QGraphicsObject):
         menu.addAction(delete_action)
         edit_action.triggered.connect(self.open_editor)
         delete_action.triggered.connect(self.delete_block)
+        set_start_action = QAction("Set as Start Block")
+        set_start_action.triggered.connect(self.mark_as_start_block)
+        menu.addAction(set_start_action)
         menu.exec(event.screenPos())
+        
+
 
     def open_editor(self):
         for i in range(self.tab_widget.count()):
@@ -108,8 +123,22 @@ class Block(QGraphicsObject):
         self.tab_widget.setCurrentWidget(editor)
 
     def delete_block(self):
-        if scene := self.scene():
-            scene.removeItem(self)
+        scene = self.scene()
+        if not scene:
+            return
+
+        # Remove all connections attached to this block
+        all_connections = self.incoming_connections + self.outgoing_connections
+        for conn in all_connections:
+            conn.remove()  # This will remove it from the scene and from the canvas list
+
+        # Remove this block from the scene
+        scene.removeItem(self)
+
+        # Optional: cleanup internal lists (not strictly necessary)
+        self.incoming_connections.clear()
+        self.outgoing_connections.clear()
+
 
     def input_anchor(self) -> QPointF:
         return self.mapToScene(self.input_port.rect().center() + self.input_port.pos())
@@ -122,6 +151,15 @@ class Block(QGraphicsObject):
             for conn in self.incoming_connections + self.outgoing_connections:
                 conn.update_line()
         return super().itemChange(change, value)
+
+    def mark_as_start_block(self):
+        for item in self.scene().items():
+            if isinstance(item, Block):
+                item.is_start_block = False
+                item.update()
+        self.is_start_block = True
+        self.update()
+
 
     
     

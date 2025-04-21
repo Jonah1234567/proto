@@ -1,23 +1,31 @@
 from PyQt6.QtWidgets import QGraphicsLineItem, QGraphicsPolygonItem, QMenu
 from PyQt6.QtGui import QPen, QColor, QPolygonF, QAction
 from PyQt6.QtCore import QPointF
+from PyQt6.QtWidgets import QGraphicsPathItem, QMenu
+from PyQt6.QtCore import Qt
+
+from PyQt6.QtWidgets import QGraphicsPathItem
+from PyQt6.QtGui import QPainterPath
+
 import math
 
 
-class ConnectionLine(QGraphicsLineItem):
+class ConnectionLine(QGraphicsPathItem):
     def __init__(self, connection):
         super().__init__()
         self.connection = connection
-        self.setFlag(QGraphicsLineItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsPathItem.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setZValue(5)
+        self.setPen(QPen(QColor("black"), 3, Qt.PenStyle.SolidLine))
 
     def contextMenuEvent(self, event):
+        print("📌 Right-clicked on connection path")
         menu = QMenu()
         delete_action = QAction("Delete Connection")
         menu.addAction(delete_action)
         delete_action.triggered.connect(self.connection.remove)
-        menu.exec(event.screenPos())
-
+        menu.exec(event.globalPosition().toPoint())
 
 class Connection:
     def __init__(self, start_block, end_block, scene):
@@ -27,7 +35,8 @@ class Connection:
 
         # Line
         self.line = ConnectionLine(self)
-        self.line.setPen(QPen(QColor("black"), 2))
+        self.line.setPen(QPen(QColor("black"), 4))
+
         self.line.setZValue(0)
         self.scene.addItem(self.line)
 
@@ -44,12 +53,35 @@ class Connection:
 
         self.update_line()
 
+  
     def update_line(self):
         start = self.start_block.output_anchor()
         end = self.end_block.input_anchor()
-        self.line.setLine(start.x(), start.y(), end.x(), end.y())
 
-        self.update_arrow(start, end)
+        # Mid x point between start and end
+        mid_x = (start.x() + end.x()) / 2
+
+        # Build orthogonal path: H → V → H
+        path = QPainterPath(start)
+
+        corner_radius = 20  # radius for rounded turns
+
+        # First horizontal
+        path.lineTo(mid_x - corner_radius, start.y())
+
+        # First curve down
+        path.quadTo(mid_x, start.y(), mid_x, start.y() + (end.y() - start.y()) / 2)
+
+        # Second curve to end y
+        path.quadTo(mid_x, end.y(), mid_x + corner_radius, end.y())
+
+        # Final horizontal to endpoint
+        path.lineTo(end)
+
+        self.line.setPath(path)
+
+        # Arrow goes on the last segment (horizontal)
+        self.update_arrow(QPointF(mid_x + corner_radius, end.y()), end)
 
     def update_arrow(self, start: QPointF, end: QPointF):
         dx = end.x() - start.x()
@@ -71,6 +103,7 @@ class Connection:
 
         polygon = QPolygonF([p1, p2, p3])
         self.arrow.setPolygon(polygon)
+
 
     def remove(self):
         # Unregister from blocks
