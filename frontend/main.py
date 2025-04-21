@@ -3,6 +3,8 @@ from PyQt6.QtWidgets import (
     QPushButton, QLabel, QMainWindow, QTabWidget
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QMenuBar, QMenu, QFileDialog
+from PyQt6.QtGui import QAction
 from canvas import Canvas
 import sys
 
@@ -12,6 +14,19 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Proto")
         self.setGeometry(100, 100, 1200, 800)
 
+             # === Menu Bar ===
+        menu_bar = self.menuBar()
+
+        file_menu = menu_bar.addMenu("File")
+
+        save_action = QAction("Save Layout", self)
+        save_action.triggered.connect(self.save_layout_prompt)
+        file_menu.addAction(save_action)
+
+        load_action = QAction("Load Layout", self)
+        load_action.triggered.connect(self.load_layout_prompt)
+        file_menu.addAction(load_action)
+
         # === Main vertical layout ===
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -19,6 +34,7 @@ class MainWindow(QMainWindow):
 
         # === Title bar ===
         title = QLabel("Proto")
+
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("font-size: 36px; font-weight: bold; padding: 10px;")
         main_layout.addWidget(title)
@@ -83,12 +99,14 @@ class MainWindow(QMainWindow):
         bottom_row.setContentsMargins(0, 10, 10, 10)
         main_layout.addLayout(bottom_row)
 
+      
         # === Optional: Load stylesheet ===
         try:
             with open("./frontend/styles.qss", "r") as f:
                 self.setStyleSheet(f.read())
         except Exception as e:
             print("Could not load stylesheet:", e)
+        
 
     def on_tab_changed(self, index):
         tab_name = self.tabs.tabText(index)
@@ -110,6 +128,16 @@ class MainWindow(QMainWindow):
         if self.tabs.tabText(index) == "Canvas":
             return
         self.tabs.removeTab(index)
+
+    def save_layout_prompt(self):
+        path, _ = QFileDialog.getSaveFileName(self, "Save Layout", "", "JSON Files (*.json)")
+        if path:
+            self.canvas.save_layout(path)
+
+    def load_layout_prompt(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Load Layout", "", "JSON Files (*.json)")
+        if path:
+            self.canvas.load_layout(path)
 
     def run_blocks(self):
         print("▶ Executing all blocks...")
@@ -165,6 +193,16 @@ class MainWindow(QMainWindow):
                     block._last_output = result  # store for passing if needed
             except Exception as e:
                 print(f"❌ Error in block [{block.name}]:", e)
+    def save_layout_prompt(self):
+        path, _ = QFileDialog.getSaveFileName(self, "Save Layout", "", "JSON Files (*.json)")
+        if path:
+            self.canvas.save_layout(path)
+
+    def load_layout_prompt(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Load Layout", "", "JSON Files (*.json)")
+        if path:
+            self.canvas.load_layout(path)
+
 
 
 if __name__ == "__main__":

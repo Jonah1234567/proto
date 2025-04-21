@@ -4,6 +4,7 @@ from PyQt6.QtCore import Qt, QPointF
 from block import Block
 from connection import Connection
 from connection import ConnectionLine
+import json
 
 
 class Canvas(QGraphicsView):
@@ -129,8 +130,6 @@ class Canvas(QGraphicsView):
         connection = Connection(start_block, end_block, self.scene)
         self.connections.append(connection)
 
-
-
     def cancel_connection(self):
         self._clear_temp_line()
 
@@ -139,3 +138,67 @@ class Canvas(QGraphicsView):
             self.scene.removeItem(self.temp_line)
             self.temp_line = None
         self.connection_start = None
+
+    def save_layout(self, filename):
+        data = {
+            "blocks": [],
+            "connections": []
+        }
+
+        for block in self.blocks:
+            data["blocks"].append({
+                "id": block.id,
+                "name": block.name,
+                "x": block.pos().x(),
+                "y": block.pos().y(),
+                "code": getattr(block, "code", ""),
+                "inputs": getattr(block, "inputs", []),
+                "outputs": getattr(block, "outputs", []),
+                "is_start_block": getattr(block, "is_start_block", False)
+            })
+
+        for conn in self.connections:
+            data["connections"].append({
+                "start_block": conn.start_block.id,
+                "end_block": conn.end_block.id
+            })
+
+        with open(filename, "w") as f:
+            json.dump(data, f, indent=4)
+        print(f"✅ Layout saved to {filename}")
+
+    def load_layout(self, filename):
+        with open(filename, "r") as f:
+            data = json.load(f)
+
+        # Clear current layout
+        for block in self.blocks:
+            self.scene.removeItem(block)
+        for conn in self.connections:
+            conn.remove()
+        self.blocks.clear()
+        self.connections.clear()
+
+        # Recreate blocks
+        id_to_block = {}
+        for block_data in data["blocks"]:
+            block = Block(block_data["name"], self.tab_widget)
+            block.id = block_data["id"]
+            block.code = block_data.get("code", "")
+            block.inputs = block_data.get("inputs", [])
+            block.outputs = block_data.get("outputs", [])
+            block.is_start_block = block_data.get("is_start_block", False)
+            block.setPos(block_data["x"], block_data["y"])
+            self.scene.addItem(block)
+            self.blocks.append(block)
+            id_to_block[block.id] = block
+
+        # Recreate connections
+        for conn_data in data["connections"]:
+            start = id_to_block.get(conn_data["start_block"])
+            end = id_to_block.get(conn_data["end_block"])
+            if start and end:
+                conn = Connection(start, end, self.scene)
+                self.connections.append(conn)
+
+

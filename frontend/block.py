@@ -4,11 +4,15 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QBrush, QPen, QColor, QPainter, QAction
 from PyQt6.QtCore import QRectF, QPointF, Qt
 from block_editor import BlockEditor
+import uuid
 
 
 class Block(QGraphicsObject):
     def __init__(self, name, tab_widget):
         super().__init__()
+        
+        self.id = str(uuid.uuid4())  # assign unique ID
+
         
         self.name = name
         self.code = ""
