@@ -30,6 +30,25 @@ class BlockEditor(QWidget):
         self.output_list = QListWidget()
         self.layout.addWidget(self.output_list)
 
+        # === Connected Blocks: BEFORE ===
+        self.layout.addWidget(QLabel("Blocks Before (inputs):"))
+        before_list = QListWidget()
+        for conn in self.block.incoming_connections:
+            source = conn.start_block
+            before_list.addItem(source.name)
+        before_list.setDisabled(True)
+        self.layout.addWidget(before_list)
+
+        # === Connected Blocks: AFTER ===
+        self.layout.addWidget(QLabel("Blocks After (outputs):"))
+        after_list = QListWidget()
+        for conn in self.block.outgoing_connections:
+            dest = conn.end_block
+            after_list.addItem(dest.name)
+        after_list.setDisabled(True)
+        self.layout.addWidget(after_list)
+
+
     def add_input(self):
         text, ok = QInputDialog.getText(self, "New Input", "Input name:")
         if ok and text:
