@@ -90,3 +90,8 @@ QMenu::item:selected {
     background-color: #dcdde1;
     color: black;
 }
+
+QGraphicsView {
+    border: 2px solid #dcdde1;
+    selection-background-color: rgba(0, 120, 215, 50); /* light blue */
+}

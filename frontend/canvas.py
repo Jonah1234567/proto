@@ -30,7 +30,15 @@ class Canvas(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         self.setStyleSheet("border: 2px solid #dcdde1;")
+        self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+        self.setStyleSheet("""
+            QGraphicsView {
+                selection-background-color: rgba(0, 120, 215, 50);  /* translucent blue */
+            }
+        """)
+        self.setRubberBandSelectionMode(Qt.ItemSelectionMode.ContainsItemShape)
 
+        self.setInteractive(True)
         self._panning = False
         self._pan_start = QPointF()
 
@@ -42,6 +50,9 @@ class Canvas(QGraphicsView):
         scene_pos = self.mapToScene(event.pos())
         item = self.scene.itemAt(scene_pos, self.transform())
         print(f"Clicked item: {item}, type: {type(item)}")
+
+        selected = self.scene.selectedItems()
+        print(f"Selected items: {len(selected)}")
 
         def get_block_parent(i):
             while i and not isinstance(i, Block):
@@ -86,8 +97,8 @@ class Canvas(QGraphicsView):
             self._panning = True
             self._pan_start = event.position()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
-        else:
-            super().mousePressEvent(event)
+        
+        super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         if self._panning:

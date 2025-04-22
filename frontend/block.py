@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QGraphicsObject, QGraphicsTextItem, QGraphicsEllipseItem, QMenu, QGraphicsItem, QListWidget, QTextEdit
 )
-from PyQt6.QtGui import QBrush, QPen, QColor, QPainter, QAction
+from PyQt6.QtGui import QBrush, QPen, QColor, QPainter, QAction, QPainterPath
 from PyQt6.QtCore import QRectF, QPointF, Qt
 from block_editor import BlockEditor
 import uuid
@@ -35,6 +35,10 @@ class Block(QGraphicsObject):
         # Create input/output ports
         self.input_port = self._create_port(-7, self.height / 2 - 7, "Input")
         self.output_port = self._create_port(self.width - 7, self.height / 2 - 7, "Output")
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+
+
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
 
     def _create_port(self, x, y, tooltip):
@@ -58,7 +62,11 @@ class Block(QGraphicsObject):
     def paint(self, painter, option, widget=None):
         # Draw the block background
         painter.setBrush(QBrush(QColor("#74b9ff")))
-        painter.setPen(QPen(QColor("#0984e3"), 2))
+        if self.isSelected():
+            painter.setPen(QPen(QColor("#d63031"), 3))  # red border
+        else:
+            painter.setPen(QPen(QColor("#0984e3"), 2))  # default
+
         if self.is_start_block:
             painter.setPen(QPen(QColor("green"), 3))
 
@@ -76,26 +84,17 @@ class Block(QGraphicsObject):
            self.output_port.contains(pos - self.output_port.pos()):
             event.ignore()
             return
+        
+         # If Shift or Ctrl are NOT pressed, clear selection
+        if not (event.modifiers() & Qt.KeyboardModifier.ShiftModifier or
+                event.modifiers() & Qt.KeyboardModifier.ControlModifier):
+            scene = self.scene()
+            if scene:
+                scene.clearSelection()
 
-        # Start dragging
-        self._dragging = True
-        self._drag_offset = event.pos()
-        self.setCursor(Qt.CursorShape.ClosedHandCursor)
-        event.accept()
-
-    def mouseMoveEvent(self, event):
-        if self._dragging:
-            delta = event.pos() - self._drag_offset
-            self.setPos(self.pos() + delta)
-            event.accept()
-        else:
-            super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        self._dragging = False
-        self.setCursor(Qt.CursorShape.ArrowCursor)
-        event.accept()
-
+        # Let Qt handle selection and movement
+        super().mousePressEvent(event)
+        
     def hoverEnterEvent(self, event):
         self.setCursor(Qt.CursorShape.OpenHandCursor)
 
@@ -163,6 +162,12 @@ class Block(QGraphicsObject):
                 item.update()
         self.is_start_block = True
         self.update()
+
+
+    def shape(self):
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, self.width, self.height, 10, 10)
+        return path
 
 
     
