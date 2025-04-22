@@ -7,6 +7,8 @@ from PyQt6.QtWidgets import QMenuBar, QMenu, QFileDialog
 from PyQt6.QtGui import QAction
 from canvas import Canvas
 import sys
+from block_library_dialog import BlockLibraryDialog
+import os
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -214,11 +216,11 @@ class MainWindow(QMainWindow):
             self.canvas.load_layout(path)
     
     def import_from_library(self):
-        print("📦 Open block library...")  # Placeholder
-        # Later: open a dialog to choose a block template
-        # selected = open_library_dialog()
-        # if selected:
-        #     self.canvas.add_block_from_template(selected)
+        dialog = BlockLibraryDialog("block_libraries", self)
+        if dialog.exec():
+            template = dialog.get_selected_template()
+            if template:
+                self.canvas.add_block_from_template(template)
 
     def eventFilter(self, source, event):
         if source == self.add_block_button and event.type() == event.Type.MouseButtonPress:

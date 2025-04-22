@@ -1,0 +1,7 @@
+{
+    "name": "NOT Gate",
+    "code": "def run(a):\n    return not a",
+    "inputs": ["a"],
+    "outputs": ["result"]
+  }
+  

@@ -1,0 +1,7 @@
+{
+    "name": "OR Gate",
+    "code": "def run(a, b):\n    return a or b",
+    "inputs": ["a", "b"],
+    "outputs": ["result"]
+  }
+  

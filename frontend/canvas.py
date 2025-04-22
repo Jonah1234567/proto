@@ -211,5 +211,22 @@ class Canvas(QGraphicsView):
             if start and end:
                 conn = Connection(start, end, self.scene)
                 self.connections.append(conn)
+    
+    def add_block_from_template(self, template):
+        name = template.get("name", "Unnamed Block")
+        code = template.get("code", "")
+        inputs = template.get("inputs", [])
+        outputs = template.get("outputs", [])
+
+        block = Block(name, self.tab_widget)
+        block.code = code
+        block.inputs = inputs
+        block.outputs = outputs
+        block.setPos(100 + len(self.blocks) * 30, 100 + len(self.blocks) * 20)
+
+        self.scene.addItem(block)
+        self.blocks.append(block)
+        print(f"🧱 Imported block: {name}")
+
 
 
