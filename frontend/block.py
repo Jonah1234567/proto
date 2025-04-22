@@ -5,7 +5,7 @@ from PyQt6.QtGui import QBrush, QPen, QColor, QPainter, QAction, QPainterPath
 from PyQt6.QtCore import QRectF, QPointF, Qt
 from block_editor import BlockEditor
 import uuid
-
+from PyQt6.QtWidgets import QMenu
 
 class Block(QGraphicsObject):
     def __init__(self, name, tab_widget):

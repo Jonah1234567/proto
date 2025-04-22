@@ -67,6 +67,12 @@ class MainWindow(QMainWindow):
         bottom_row = QHBoxLayout()
         bottom_row.addStretch()
 
+        # 1. Create the menu first
+        self.add_block_menu = QMenu(self)
+        self.add_block_menu.addAction("➕ Add Blank Block", self.canvas.add_block)
+        self.add_block_menu.addAction("📦 Import From Library", self.import_from_library)
+
+        # 2. Create the button
         self.add_block_button = QPushButton("➕ Add Block")
         self.add_block_button.setFixedWidth(200)
         self.add_block_button.setStyleSheet("""
@@ -77,6 +83,12 @@ class MainWindow(QMainWindow):
             border-radius: 8px;
         """)
         self.add_block_button.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        # 3. Hook up left-click as usual
+        self.add_block_button.clicked.connect(self.canvas.add_block)
+
+        # 4. Now safely install event filter
+        self.add_block_button.installEventFilter(self)
 
         self.run_button = QPushButton("▶ Run")
         self.run_button.setFixedWidth(200)
@@ -92,8 +104,6 @@ class MainWindow(QMainWindow):
 
         bottom_row.addWidget(self.run_button)
 
-
-        self.add_block_button.clicked.connect(self.canvas.add_block)
 
         bottom_row.addWidget(self.add_block_button)
         bottom_row.setContentsMargins(0, 10, 10, 10)
@@ -202,6 +212,21 @@ class MainWindow(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(self, "Load Layout", "", "JSON Files (*.json)")
         if path:
             self.canvas.load_layout(path)
+    
+    def import_from_library(self):
+        print("📦 Open block library...")  # Placeholder
+        # Later: open a dialog to choose a block template
+        # selected = open_library_dialog()
+        # if selected:
+        #     self.canvas.add_block_from_template(selected)
+
+    def eventFilter(self, source, event):
+        if source == self.add_block_button and event.type() == event.Type.MouseButtonPress:
+            if event.button() == Qt.MouseButton.RightButton:
+                self.add_block_menu.exec(self.add_block_button.mapToGlobal(event.position().toPoint()))
+                return True  # Don't pass event on
+        return super().eventFilter(source, event)
+
 
 
 
