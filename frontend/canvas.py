@@ -137,6 +137,12 @@ class Canvas(QGraphicsView):
         self.blocks.append(block)
 
     def create_connection(self, start_block, end_block):
+    # Prevent duplicate connections
+        for conn in self.connections:
+            if conn.start_block == start_block and conn.end_block == end_block:
+                print("🚫 Duplicate connection ignored")
+                return
+
         print(f"📍 Drawing connection from {start_block.name} to {end_block.name}")
         connection = Connection(start_block, end_block, self.scene)
         self.connections.append(connection)
