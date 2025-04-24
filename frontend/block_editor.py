@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
     QPushButton, QListWidget, QListWidgetItem, QInputDialog
 )
 import re
+from io_mapper import IOMapperDialog  
 
 class BlockEditor(QWidget):
     def __init__(self, block, tab_widget):
@@ -29,6 +30,19 @@ class BlockEditor(QWidget):
         self.layout.addWidget(QLabel("Outputs:"))
         self.output_list = QListWidget()
         self.layout.addWidget(self.output_list)
+
+        # Mapping Button
+        map_inputs_button = QPushButton("🔗 Open I/O Mapper")
+        map_inputs_button.setStyleSheet("""
+            font-size: 14px;
+            color: black;
+            border: 2px solid black;
+            border-radius: 6px;
+            padding: 6px 12px;
+        """)
+        map_inputs_button.clicked.connect(self.open_io_mapper)
+        self.layout.addWidget(map_inputs_button)
+
 
         # === Connected Blocks: BEFORE ===
         self.layout.addWidget(QLabel("Blocks Before (inputs):"))
@@ -91,5 +105,10 @@ class BlockEditor(QWidget):
         self.block.inputs = inputs
         self.block.outputs = outputs
         self.block.update()
+
+    def open_io_mapper(self):
+        dialog = IOMapperDialog(self.block, self.tab_widget)
+        dialog.exec()
+
         
 
