@@ -6,6 +6,12 @@ from PyQt6.QtCore import QRectF, QPointF, Qt
 from block_editor import BlockEditor
 import uuid
 from PyQt6.QtWidgets import QMenu
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from backend.inputs_proxy import InputsProxy
+from backend.outputs_proxy import OutputsProxy
 
 class Block(QGraphicsObject):
     def __init__(self, name, tab_widget):
@@ -16,8 +22,8 @@ class Block(QGraphicsObject):
         
         self.name = name
         self.code = ""
-        self.input_list = []
-        self.output_list = []
+        self.inputs = InputsProxy()
+        self.outputs = OutputsProxy()
 
         self.tab_widget = tab_widget
         self.width = 140
@@ -168,6 +174,7 @@ class Block(QGraphicsObject):
         path = QPainterPath()
         path.addRoundedRect(0, 0, self.width, self.height, 10, 10)
         return path
+
 
 
     

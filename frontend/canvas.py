@@ -6,6 +6,12 @@ from connection import Connection
 from connection import ConnectionLine
 import json
 
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from backend.inputs_proxy import InputsProxy
+from backend.outputs_proxy import OutputsProxy
+
 
 class Canvas(QGraphicsView):
     def __init__(self, tab_widget):
@@ -163,14 +169,16 @@ class Canvas(QGraphicsView):
         }
 
         for block in self.blocks:
+            block.inputs = block.inputs.to_dict() if hasattr(block.inputs, "to_dict") else {}
+            block.outputs = block.outputs.to_dict() if hasattr(block.outputs, "to_dict") else {}
             data["blocks"].append({
                 "id": block.id,
                 "name": block.name,
                 "x": block.pos().x(),
                 "y": block.pos().y(),
                 "code": getattr(block, "code", ""),
-                "inputs": getattr(block, "inputs", []),
-                "outputs": getattr(block, "outputs", []),
+                "inputs": block.inputs,
+                "outputs": block.outputs,
                 "is_start_block": getattr(block, "is_start_block", False)
             })
 
@@ -202,8 +210,12 @@ class Canvas(QGraphicsView):
             block = Block(block_data["name"], self.tab_widget)
             block.id = block_data["id"]
             block.code = block_data.get("code", "")
-            block.inputs = block_data.get("inputs", [])
-            block.outputs = block_data.get("outputs", [])
+            block.inputs = InputsProxy()
+            print(type(block_data.get("inputs",  {})))
+            block.inputs.from_dict(block_data.get("inputs", {}))
+
+            block.outputs = OutputsProxy()
+            block.outputs.from_dict(block_data.get("outputs", {}))
             block.is_start_block = block_data.get("is_start_block", False)
             block.setPos(block_data["x"], block_data["y"])
             self.scene.addItem(block)

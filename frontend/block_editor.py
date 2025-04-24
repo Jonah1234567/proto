@@ -3,7 +3,13 @@ from PyQt6.QtWidgets import (
     QPushButton, QListWidget, QListWidgetItem, QInputDialog
 )
 import re
-from io_mapper import IOMapperDialog  
+from io_mapper import IOMapperDialog 
+
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from backend.inputs_proxy import InputsProxy
+from backend.outputs_proxy import OutputsProxy
 
 class BlockEditor(QWidget):
     def __init__(self, block, tab_widget):
@@ -19,16 +25,21 @@ class BlockEditor(QWidget):
         self.layout.addWidget(self.name_input)
 
         self.layout.addWidget(QLabel("Code:"))
-        self.code_input = QTextEdit(block.code)
+        self.code_input = QTextEdit()
+        self.code_input.setPlainText(block.code)  # preserves newlines and tabs
         self.layout.addWidget(self.code_input)
 
         self.layout.addWidget(QLabel("Inputs:"))
         self.input_list = QListWidget()
+        inputs = block.inputs.to_list()
+        self.input_list.addItems(inputs)
         self.layout.addWidget(self.input_list)
 
 
         self.layout.addWidget(QLabel("Outputs:"))
         self.output_list = QListWidget()
+        outputs = block.outputs.to_list()
+        self.output_list.addItems(outputs)
         self.layout.addWidget(self.output_list)
 
         # Mapping Button
@@ -78,33 +89,34 @@ class BlockEditor(QWidget):
         self.tab_widget.setTabText(self.tab_widget.indexOf(self), self.block.name)
         self.block.update()
 
-        print(self.code_input.toPlainText())
-        
         self.block.code = self.code_input.toPlainText()
 
-        inputs = []
-        match = re.search(r"def\s+\w+\((.*?)\)", self.block.code)
-        if match:
-            args = match.group(1)
-            inputs = [arg.strip() for arg in args.split(",") if arg.strip()]
+        # === Extract inputs and outputs from code
+        code = self.block.code
 
-        outputs = []
-        return_match = re.search(r"return\s+(.*)", self.block.code)
-        if return_match:
-            raw_out = return_match.group(1)
-            outputs = [out.strip() for out in raw_out.split(",") if out.strip()]
+        input_matches = re.findall(r"\binputs\.([a-zA-Z_][a-zA-Z0-9_]*)", code)
+        output_matches = re.findall(r"\boutputs\.([a-zA-Z_][a-zA-Z0-9_]*)", code)
 
+        # Deduplicate and preserve order
+        inputs = list(dict.fromkeys(input_matches))
+        outputs = list(dict.fromkeys(output_matches))
+
+        # === Update UI lists
         self.input_list.clear()
+        self.block.inputs = InputsProxy()
         for inp in inputs:
             self.input_list.addItem(inp)
 
         self.output_list.clear()
+        self.block.outputs = OutputsProxy()
         for out in outputs:
             self.output_list.addItem(out)
 
-        self.block.inputs = inputs
-        self.block.outputs = outputs
+        # === Update block data
+        self.block.inputs.set_names(inputs)
+        self.block.outputs.set_names(outputs)
         self.block.update()
+
 
     def open_io_mapper(self):
         dialog = IOMapperDialog(self.block, self.tab_widget)

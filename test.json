@@ -1,0 +1,58 @@
+{
+    "blocks": [
+        {
+            "id": "f98e18d5-0afe-4e2e-a992-f95b66b1f775",
+            "name": "Block 1",
+            "x": 50.0,
+            "y": 100.0,
+            "code": "def nums(x,y)\n\treturn x,y\nx,y = nums(5,10)\noutputs.x = x\noutputs.y=y",
+            "inputs": {},
+            "outputs": {
+                "x": null,
+                "y": null
+            },
+            "is_start_block": false
+        },
+        {
+            "id": "c62edba3-22f4-40bd-83ec-6577516b9f05",
+            "name": "Block 2",
+            "x": 305.0,
+            "y": 99.0,
+            "code": "def add(x,y)\n\treturn x+y\n\noutputs.z = add(inputs.x, inputs.y)",
+            "inputs": {
+                "x": null,
+                "y": null
+            },
+            "outputs": {
+                "z": null,
+                "y": null
+            },
+            "is_start_block": false
+        },
+        {
+            "id": "114d4b5d-8164-4cbd-ab96-74aa15c7e8ae",
+            "name": "Block 3",
+            "x": 516.0,
+            "y": 100.0,
+            "code": "def mul(x,y)\n\treturn x*y\noutputs.z = mul(inputs.x, inputs.y)",
+            "inputs": {
+                "x": null,
+                "y": null
+            },
+            "outputs": {
+                "z": null
+            },
+            "is_start_block": false
+        }
+    ],
+    "connections": [
+        {
+            "start_block": "f98e18d5-0afe-4e2e-a992-f95b66b1f775",
+            "end_block": "c62edba3-22f4-40bd-83ec-6577516b9f05"
+        },
+        {
+            "start_block": "c62edba3-22f4-40bd-83ec-6577516b9f05",
+            "end_block": "114d4b5d-8164-4cbd-ab96-74aa15c7e8ae"
+        }
+    ]
+}
