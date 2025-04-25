@@ -9,6 +9,8 @@ from PyQt6.QtWidgets import QMenu
 import sys
 from pathlib import Path
 
+
+
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
@@ -24,6 +26,7 @@ class Block(QGraphicsObject):
         self.code = ""
         self.inputs = InputsProxy()
         self.outputs = OutputsProxy()
+        self.input_mappings = {}
 
         self.tab_widget = tab_widget
         self.width = 140

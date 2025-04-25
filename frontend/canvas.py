@@ -169,8 +169,10 @@ class Canvas(QGraphicsView):
         }
 
         for block in self.blocks:
+            print(type(block.inputs), "SI")
             block.inputs = block.inputs.to_dict() if hasattr(block.inputs, "to_dict") else {}
             block.outputs = block.outputs.to_dict() if hasattr(block.outputs, "to_dict") else {}
+            print(block.input_mappings, "hi")
             data["blocks"].append({
                 "id": block.id,
                 "name": block.name,
@@ -179,9 +181,12 @@ class Canvas(QGraphicsView):
                 "code": getattr(block, "code", ""),
                 "inputs": block.inputs,
                 "outputs": block.outputs,
+                "input_mappings": block.input_mappings,
                 "is_start_block": getattr(block, "is_start_block", False)
             })
+            print(type(block.inputs), "SO")
 
+        
         for conn in self.connections:
             data["connections"].append({
                 "start_block": conn.start_block.id,
@@ -210,12 +215,14 @@ class Canvas(QGraphicsView):
             block = Block(block_data["name"], self.tab_widget)
             block.id = block_data["id"]
             block.code = block_data.get("code", "")
+            print(type(block.inputs), "LI")
             block.inputs = InputsProxy()
-            print(type(block_data.get("inputs",  {})))
             block.inputs.from_dict(block_data.get("inputs", {}))
-
+            print(type(block.inputs), "LO")
             block.outputs = OutputsProxy()
             block.outputs.from_dict(block_data.get("outputs", {}))
+            print( block_data.get("input_mappings", {}))
+            block.input_mappings = block_data.get("input_mappings", {})
             block.is_start_block = block_data.get("is_start_block", False)
             block.setPos(block_data["x"], block_data["y"])
             self.scene.addItem(block)
@@ -233,13 +240,18 @@ class Canvas(QGraphicsView):
     def add_block_from_template(self, template):
         name = template.get("name", "Unnamed Block")
         code = template.get("code", "")
-        inputs = template.get("inputs", [])
-        outputs = template.get("outputs", [])
+        inputs = InputsProxy()
+        inputs = inputs.from_dict(template.get("inputs", {}))
+
+        outputs = OutputsProxy()
+        outputs = outputs.from_dict(template.get("outputs", {}))
+        input_mappings = template.get("input_mappings", {})
 
         block = Block(name, self.tab_widget)
         block.code = code
         block.inputs = inputs
         block.outputs = outputs
+        block.input_mappings = input_mappings
         block.setPos(100 + len(self.blocks) * 30, 100 + len(self.blocks) * 20)
 
         self.scene.addItem(block)

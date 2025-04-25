@@ -1,83 +1,128 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QComboBox, QWidget, QScrollArea
+    QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout,
+    QComboBox, QWidget, QScrollArea, QSizePolicy, QMessageBox
 )
 from PyQt6.QtCore import Qt
 
 
-
 class IOMapperDialog(QDialog):
-    def __init__(self, block, tab_widget, canvas, parent=None):
+    def __init__(self, block, parent=None):
         super().__init__(parent)
         self.block = block
-        self.tab_widget = tab_widget
-        self.canvas = canvas  # 👈 Pass in the canvas to get connections
+        print(type(block.inputs))
         self.setWindowTitle(f"Map Inputs for: {self.block.name}")
-        self.setMinimumSize(600, 500)
+        self.setMinimumSize(800, 647)
 
-        self.input_mappings = {}  # {input_name: (block_id, output_name)}
+        self.input_mappings = {}
 
-        layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
 
         title = QLabel("Select output values from other blocks to feed into this block’s inputs.")
         title.setStyleSheet("font-weight: bold; font-size: 16px; padding-bottom: 10px;")
-        layout.addWidget(title)
+        main_layout.addWidget(title)
 
-        # Scrollable area in case of many inputs
+        # === Scroll area setup ===
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_content = QWidget()
         scroll_layout = QVBoxLayout(scroll_content)
+        scroll_content.setLayout(scroll_layout)
+        scroll_area.setWidget(scroll_content)
+        main_layout.addWidget(scroll_area)
 
-        # Step 1: Gather all blocks connected into this block
+        # === Get upstream blocks
         upstream_blocks = []
         for conn in self.block.incoming_connections:
-            if conn.end_block == self.block:
+            if conn.end_block == self.block and conn.start_block not in upstream_blocks:
                 upstream_blocks.append(conn.start_block)
 
-        # Step 2: Build dropdowns per input
-        for input_name in self.block.inputs:
-            row = QHBoxLayout()
+        # === Inputs UI
+        input_dict = self.block.inputs.to_dict()
 
-            label = QLabel(f"{input_name}:")
-            label.setFixedWidth(100)
-            row.addWidget(label)
+        if not input_dict:
+            scroll_layout.addWidget(QLabel("⚠️ This block has no defined inputs."))
+        else:
+            for input_name in input_dict.keys():
+                row = QHBoxLayout()
 
-            dropdown = QComboBox()
-            dropdown.addItem("— Not Connected —", userData=None)
+                label = QLabel(f"{input_name}:")
+                label.setFixedWidth(120)
+                row.addWidget(label)
 
-            for blk in upstream_blocks:
-                for out in blk.outputs:
-                    label_str = f"{blk.name}.{out}"
-                    dropdown.addItem(label_str, userData=(blk.id, out))
+                dropdown = QComboBox()
+                dropdown.addItem("— Not Connected —", userData=None)
 
-            row.addWidget(dropdown)
-            scroll_layout.addLayout(row)
+                # Track current selection index
+                selected_index = 0
+                saved_link = getattr(self.block, "input_links", {}).get(input_name)
 
-            # Store reference to pull mapping on save
-            self.input_mappings[input_name] = dropdown
+                for blk in upstream_blocks:
+                    for out in blk.outputs.to_dict().keys():
+                        label_str = f"{blk.name}.{out}"
+                        user_data = (blk.id, out)
+                        dropdown.addItem(label_str, userData=user_data)
 
-        scroll_area.setWidget(scroll_content)
-        layout.addWidget(scroll_area)
+                        if saved_link and saved_link["block_id"] == blk.id and saved_link["output"] == out:
+                            selected_index = dropdown.count() - 1
 
-        # Save + Close
+                dropdown.setCurrentIndex(selected_index)
+                self.input_mappings[input_name] = dropdown
+                row.addWidget(dropdown)
+                scroll_layout.addLayout(row)
+
+        # === Save + Close buttons
         save_btn = QPushButton("Save Mappings")
         save_btn.setStyleSheet("color: black; border: 1px solid black;")
         save_btn.clicked.connect(self.save_mappings)
-        layout.addWidget(save_btn)
+        main_layout.addWidget(save_btn)
 
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn)
+        main_layout.addWidget(close_btn)
+
+        self.setStyleSheet("""
+            QDialog {
+                background-color: white;
+            }
+            QLabel, QComboBox, QPushButton {
+                color: black;
+                background-color: white;
+                font-size: 14px;
+            }
+            QComboBox {
+                border: 1px solid gray;
+                padding: 4px;
+            }
+            QPushButton {
+                border: 1px solid black;
+                padding: 6px;
+                border-radius: 4px;
+            }
+            QScrollArea {
+                background: white;
+            }
+        """)
 
     def save_mappings(self):
-        self.block.input_links = {}  # Optional: where you store resolved links
+        self.block.input_links = {}  # Reset stored links
+
         for input_name, combo in self.input_mappings.items():
-            data = combo.currentData()
-            if data:
+            index = combo.currentIndex()
+            if index <= 0:  # Index 0 is "— Not Connected —"
+                continue
+
+            data = combo.itemData(index)
+            if isinstance(data, tuple) and len(data) == 2:
                 self.block.input_links[input_name] = {
                     "block_id": data[0],
                     "output": data[1]
                 }
 
         print("🔗 Saved input mappings:", self.block.input_links)
-        self.accept()
+
+        # Optional: flash confirmation
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Success")
+        msg.setText("✅ Input mappings saved.")
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg.exec()

@@ -119,8 +119,11 @@ class BlockEditor(QWidget):
 
 
     def open_io_mapper(self):
+        
+        print(type(self.block.inputs), "inputs")
         dialog = IOMapperDialog(self.block, self.tab_widget)
-        dialog.exec()
+        dialog.exec()  # ✅ Modal dialog that blocks correctly until closed
+        print("✅ IOMapperDialog closed successfully.")
 
         
 
