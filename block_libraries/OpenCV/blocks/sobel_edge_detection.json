@@ -1,0 +1,8 @@
+{
+    "name": "Sobel Edge Detection",
+    "code": "import cv2\nimg = cv2.imread('test.jpg')\nimg_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\nimg_blur = cv2.GaussianBlur(img_gray, (3,3), 0)\nsobelxy = cv2.Sobel(src=img_blur, ddepth=cv2.CV_64F, dx=1, dy=1, ksize=5) # Combined X and Y Sobel Edge Detection\ncv2.imshow('Sobel X Y using Sobel() function', sobelxy)\ncv2.waitKey(0)\ncv2.destroyAllWindows()",
+    "inputs":{
+    },
+    "outputs": {
+    }
+  }
