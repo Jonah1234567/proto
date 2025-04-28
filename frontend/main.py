@@ -6,9 +6,16 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMenuBar, QMenu, QFileDialog
 from PyQt6.QtGui import QAction
 from canvas import Canvas
-import sys
 from block_library_dialog import BlockLibraryDialog
 import os
+
+import sys
+from pathlib import Path
+
+
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from backend.engine import run_all_blocks
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -153,58 +160,9 @@ class MainWindow(QMainWindow):
 
     def run_blocks(self):
         print("▶ Executing all blocks...")
+        run_all_blocks(self.canvas)
 
-        canvas = self.canvas
-        blocks = canvas.blocks
-        connections = canvas.connections
-
-        # Build adjacency + dependency graph
-        incoming_map = {block: [] for block in blocks}
-        outgoing_map = {block: [] for block in blocks}
-
-        for conn in connections:
-            incoming_map[conn.end_block].append(conn.start_block)
-            outgoing_map[conn.start_block].append(conn.end_block)
-
-        # Topological sort
-        sorted_blocks = []
-        visited = set()
-
-        sorted_blocks = []
-        visited = set()
-
-        def visit(block):
-            if block in visited:
-                return
-            visited.add(block)
-            for child in outgoing_map.get(block, []):
-                visit(child)
-            sorted_blocks.insert(0, block)  # insert at front to maintain topological order
-
-
-        start_blocks = [b for b in blocks if getattr(b, "is_start_block", False)]
-        if not start_blocks:
-            print("⚠️ No start block selected. Aborting run.")
-            return
-
-        for start in start_blocks:
-            visit(start)
-
-        # Now execute blocks in order
-        context = {}
-        for block in sorted_blocks:
-            code = getattr(block, "code", "")
-            if not code:
-                continue
-
-            try:
-                exec(code, context)
-                if "run" in context and callable(context["run"]):
-                    result = context["run"]()
-                    print(f"🧠 Block [{block.name}] ran: result =", result)
-                    block._last_output = result  # store for passing if needed
-            except Exception as e:
-                print(f"❌ Error in block [{block.name}]:", e)
+       
     def save_layout_prompt(self):
         path, _ = QFileDialog.getSaveFileName(self, "Save Layout", "", "JSON Files (*.json)")
         if path:

@@ -4,7 +4,7 @@
             "id": "ada6b256-d5db-4016-afdd-187823e32423",
             "name": "Block 1",
             "x": -480.0,
-            "y": -80.0,
+            "y": -79.0,
             "code": "def nums(x,y):\n\treturn x,y\nx,y = nums(5,10)\noutputs.x=x\noutputs.y=y",
             "inputs": {},
             "outputs": {
@@ -12,14 +12,14 @@
                 "y": null
             },
             "input_mappings": {},
-            "is_start_block": false
+            "is_start_block": true
         },
         {
             "id": "24c12f64-f227-422f-bf41-c2124965ac6e",
             "name": "Block 2",
-            "x": -220.0,
-            "y": -76.0,
-            "code": "def add(x,y)\n\treturn x+y\noutputs.z = add(inputs.x, inputs.y)",
+            "x": -181.0,
+            "y": -39.0,
+            "code": "def add(x,y):\n\treturn x+y\noutputs.z = add(inputs.x, inputs.y)",
             "inputs": {
                 "x": null,
                 "y": null
@@ -42,8 +42,8 @@
         {
             "id": "f9f9a9cd-b4ac-4131-b741-fa3584ae2437",
             "name": "Block 3",
-            "x": 87.0,
-            "y": -155.0,
+            "x": 219.0,
+            "y": -224.0,
             "code": "def mul(x,y):\n\treturn x*y\noutputs.z=mul(inputs.x, inputs.y)",
             "inputs": {
                 "x": null,
@@ -52,7 +52,16 @@
             "outputs": {
                 "z": null
             },
-            "input_mappings": {},
+            "input_mappings": {
+                "x": {
+                    "block_id": "ada6b256-d5db-4016-afdd-187823e32423",
+                    "output_name": "x"
+                },
+                "y": {
+                    "block_id": "24c12f64-f227-422f-bf41-c2124965ac6e",
+                    "output_name": "z"
+                }
+            },
             "is_start_block": false
         }
     ],
@@ -63,6 +72,10 @@
         },
         {
             "start_block": "24c12f64-f227-422f-bf41-c2124965ac6e",
+            "end_block": "f9f9a9cd-b4ac-4131-b741-fa3584ae2437"
+        },
+        {
+            "start_block": "ada6b256-d5db-4016-afdd-187823e32423",
             "end_block": "f9f9a9cd-b4ac-4131-b741-fa3584ae2437"
         }
     ]
