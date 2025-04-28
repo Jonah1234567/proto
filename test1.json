@@ -8,8 +8,8 @@
             "code": "def nums(x,y):\n\treturn x,y\nx,y = nums(5,10)\noutputs.x=x\noutputs.y=y",
             "inputs": {},
             "outputs": {
-                "x": null,
-                "y": null
+                "x": 5,
+                "y": 10
             },
             "input_mappings": {},
             "is_start_block": true
@@ -25,7 +25,7 @@
                 "y": null
             },
             "outputs": {
-                "z": null
+                "z": 15
             },
             "input_mappings": {
                 "x": {
@@ -50,12 +50,12 @@
                 "y": null
             },
             "outputs": {
-                "z": null
+                "z": 150
             },
             "input_mappings": {
                 "x": {
                     "block_id": "ada6b256-d5db-4016-afdd-187823e32423",
-                    "output_name": "x"
+                    "output_name": "y"
                 },
                 "y": {
                     "block_id": "24c12f64-f227-422f-bf41-c2124965ac6e",

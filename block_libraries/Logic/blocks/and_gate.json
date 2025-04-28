@@ -1,7 +1,11 @@
 {
     "name": "AND Gate",
-    "code": "def run(a, b):\n    return a and b",
-    "inputs": ["a", "b"],
-    "outputs": ["result"]
+    "code": "def run(a, b):\n    return a and b\n outputs.c = run(inputs.a, inputs.b)",
+    "inputs":{
+      "a": null, 
+      "b": null
+    },
+    "outputs": {
+      "c": null
+    }
   }
-  

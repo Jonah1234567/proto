@@ -178,7 +178,7 @@ class MainWindow(QMainWindow):
         if dialog.exec():
             template = dialog.get_selected_template()
             if template:
-                self.canvas.add_block_from_template(template)
+                self.canvas.load_block_from_template_wrapper(template)
 
     def eventFilter(self, source, event):
         if source == self.add_block_button and event.type() == event.Type.MouseButtonPress:

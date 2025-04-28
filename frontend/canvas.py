@@ -11,6 +11,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
+from backend.saving import save_file
+from backend.loading import load_file, load_block_from_template
 
 
 class Canvas(QGraphicsView):
@@ -163,95 +165,13 @@ class Canvas(QGraphicsView):
         self.connection_start = None
 
     def save_layout(self, filename):
-        data = {
-            "blocks": [],
-            "connections": []
-        }
-
-        for block in self.blocks:
-            
-            print(block.input_mappings if hasattr(block.input_mappings, "to_dict") else {}, "hi")
-            data["blocks"].append({
-                "id": block.id,
-                "name": block.name,
-                "x": block.pos().x(),
-                "y": block.pos().y(),
-                "code": getattr(block, "code", ""),
-                "inputs": block.inputs.to_dict() if hasattr(block.inputs, "to_dict") else {},
-                "outputs": block.outputs.to_dict() if hasattr(block.outputs, "to_dict") else {},
-                "input_mappings": block.input_mappings if hasattr(block, "input_mappings") else {},
-                "is_start_block": getattr(block, "is_start_block", False),
-            })
-
+        save_file(self, filename)
         
-        for conn in self.connections:
-            data["connections"].append({
-                "start_block": conn.start_block.id,
-                "end_block": conn.end_block.id
-            })
-
-        with open(filename, "w") as f:
-            json.dump(data, f, indent=4)
-        print(f"✅ Layout saved to {filename}")
-
     def load_layout(self, filename):
-        with open(filename, "r") as f:
-            data = json.load(f)
-
-        # Clear current layout
-        for block in self.blocks:
-            self.scene.removeItem(block)
-        for conn in self.connections:
-            conn.remove()
-        self.blocks.clear()
-        self.connections.clear()
-
-        # Recreate blocks
-        id_to_block = {}
-        for block_data in data["blocks"]:
-            block = Block(block_data["name"], self.tab_widget)
-            block.id = block_data["id"]
-            block.code = block_data.get("code", "")
-            block.inputs = InputsProxy()
-            block.inputs.from_dict(block_data.get("inputs", {}))
-            block.outputs = OutputsProxy()
-            block.outputs.from_dict(block_data.get("outputs", {}))
-            print( block_data.get("input_mappings", {}))
-            block.input_mappings = block_data.get("input_mappings", {})
-            block.is_start_block = block_data.get("is_start_block", False)
-            block.setPos(block_data["x"], block_data["y"])
-            self.scene.addItem(block)
-            self.blocks.append(block)
-            id_to_block[block.id] = block
-
-        # Recreate connections
-        for conn_data in data["connections"]:
-            start = id_to_block.get(conn_data["start_block"])
-            end = id_to_block.get(conn_data["end_block"])
-            if start and end:
-                conn = Connection(start, end, self.scene)
-                self.connections.append(conn)
+        load_file(self, filename)
     
-    def add_block_from_template(self, template):
-        name = template.get("name", "Unnamed Block")
-        code = template.get("code", "")
-        inputs = InputsProxy()
-        inputs = inputs.from_dict(template.get("inputs", {}))
-
-        outputs = OutputsProxy()
-        outputs = outputs.from_dict(template.get("outputs", {}))
-        input_mappings = template.get("input_mappings", {})
-
-        block = Block(name, self.tab_widget)
-        block.code = code
-        block.inputs = inputs
-        block.outputs = outputs
-        block.input_mappings = input_mappings
-        block.setPos(100 + len(self.blocks) * 30, 100 + len(self.blocks) * 20)
-
-        self.scene.addItem(block)
-        self.blocks.append(block)
-        print(f"🧱 Imported block: {name}")
+    def load_block_from_template_wrapper(self, template):
+        load_block_from_template(self, template)
 
 
 
