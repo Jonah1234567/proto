@@ -169,22 +169,19 @@ class Canvas(QGraphicsView):
         }
 
         for block in self.blocks:
-            print(type(block.inputs), "SI")
-            block.inputs = block.inputs.to_dict() if hasattr(block.inputs, "to_dict") else {}
-            block.outputs = block.outputs.to_dict() if hasattr(block.outputs, "to_dict") else {}
-            print(block.input_mappings, "hi")
+            
+            print(block.input_mappings if hasattr(block.input_mappings, "to_dict") else {}, "hi")
             data["blocks"].append({
                 "id": block.id,
                 "name": block.name,
                 "x": block.pos().x(),
                 "y": block.pos().y(),
                 "code": getattr(block, "code", ""),
-                "inputs": block.inputs,
-                "outputs": block.outputs,
-                "input_mappings": block.input_mappings,
-                "is_start_block": getattr(block, "is_start_block", False)
+                "inputs": block.inputs.to_dict() if hasattr(block.inputs, "to_dict") else {},
+                "outputs": block.outputs.to_dict() if hasattr(block.outputs, "to_dict") else {},
+                "input_mappings": block.input_mappings if hasattr(block, "input_mappings") else {},
+                "is_start_block": getattr(block, "is_start_block", False),
             })
-            print(type(block.inputs), "SO")
 
         
         for conn in self.connections:
@@ -215,10 +212,8 @@ class Canvas(QGraphicsView):
             block = Block(block_data["name"], self.tab_widget)
             block.id = block_data["id"]
             block.code = block_data.get("code", "")
-            print(type(block.inputs), "LI")
             block.inputs = InputsProxy()
             block.inputs.from_dict(block_data.get("inputs", {}))
-            print(type(block.inputs), "LO")
             block.outputs = OutputsProxy()
             block.outputs.from_dict(block_data.get("outputs", {}))
             print( block_data.get("input_mappings", {}))

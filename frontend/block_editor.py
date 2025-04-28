@@ -123,6 +123,7 @@ class BlockEditor(QWidget):
         print(type(self.block.inputs), "inputs")
         dialog = IOMapperDialog(self.block, self.tab_widget)
         dialog.exec()  # ✅ Modal dialog that blocks correctly until closed
+        print(self.block.input_mappings)
         print("✅ IOMapperDialog closed successfully.")
 
         

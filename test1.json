@@ -27,7 +27,16 @@
             "outputs": {
                 "z": null
             },
-            "input_mappings": {},
+            "input_mappings": {
+                "x": {
+                    "block_id": "ada6b256-d5db-4016-afdd-187823e32423",
+                    "output_name": "x"
+                },
+                "y": {
+                    "block_id": "ada6b256-d5db-4016-afdd-187823e32423",
+                    "output_name": "y"
+                }
+            },
             "is_start_block": false
         },
         {

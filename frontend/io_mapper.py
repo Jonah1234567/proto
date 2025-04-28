@@ -102,23 +102,28 @@ class IOMapperDialog(QDialog):
                 background: white;
             }
         """)
+        self.load_saved_mappings()
+
 
     def save_mappings(self):
-        self.block.input_links = {}  # Reset stored links
+        if not hasattr(self.block, "input_mappings"):
+            self.block.input_mappings = {}  # Initialize if missing
+
+        self.block.input_mappings.clear()  # Reset existing mappings
 
         for input_name, combo in self.input_mappings.items():
             index = combo.currentIndex()
-            if index <= 0:  # Index 0 is "— Not Connected —"
-                continue
+            if index <= 0:
+                continue  # Skip "Not Connected"
 
             data = combo.itemData(index)
             if isinstance(data, tuple) and len(data) == 2:
-                self.block.input_links[input_name] = {
+                self.block.input_mappings[input_name] = {
                     "block_id": data[0],
-                    "output": data[1]
+                    "output_name": data[1]
                 }
 
-        print("🔗 Saved input mappings:", self.block.input_links)
+        print("🔗 Saved input mappings:", self.block.input_mappings)
 
         # Optional: flash confirmation
         msg = QMessageBox(self)
@@ -126,3 +131,24 @@ class IOMapperDialog(QDialog):
         msg.setText("✅ Input mappings saved.")
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg.exec()
+
+    def load_saved_mappings(self):
+        if not hasattr(self.block, "input_mappings"):
+            return
+
+        for input_name, dropdown in self.input_mappings.items():
+            mapping = self.block.input_mappings.get(input_name)
+            if not mapping:
+                continue  # No saved mapping for this input
+
+            target_block_id = mapping.get("block_id")
+            target_output_name = mapping.get("output_name")
+
+            # Try to find matching item in dropdown
+            for idx in range(1, dropdown.count()):  # Start from 1 (skip "Not Connected")
+                item_data = dropdown.itemData(idx)
+                if item_data and isinstance(item_data, tuple):
+                    block_id, output_name = item_data
+                    if block_id == target_block_id and output_name == target_output_name:
+                        dropdown.setCurrentIndex(idx)
+                        break
