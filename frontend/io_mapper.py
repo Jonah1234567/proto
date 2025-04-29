@@ -89,9 +89,17 @@ class IOMapperDialog(QDialog):
                 background-color: white;
                 font-size: 14px;
             }
-            QComboBox {
+                QComboBox {
+                color: black;
+                background-color: white;
                 border: 1px solid gray;
                 padding: 4px;
+            }
+            QComboBox QAbstractItemView {
+                color: black;
+                background-color: white;
+                selection-background-color: lightgray;
+                selection-color: black;
             }
             QPushButton {
                 border: 1px solid black;
