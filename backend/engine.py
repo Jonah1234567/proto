@@ -81,6 +81,7 @@ def run_all_blocks(canvas):
     # Now execute blocks in order
     context = {}
     for block in sorted_blocks:
+        print(block.name)
         code = getattr(block, "code", "")
         if not code:
             continue

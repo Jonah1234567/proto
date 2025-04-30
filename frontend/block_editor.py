@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QLineEdit, QTextEdit,
-    QPushButton, QListWidget, QListWidgetItem, QInputDialog
+    QPushButton, QListWidget, QListWidgetItem, QInputDialog, QMessageBox
 )
 import re
 from io_mapper import IOMapperDialog 
@@ -43,6 +43,19 @@ class BlockEditor(QWidget):
         self.layout.addWidget(self.output_list)
 
         # Mapping Button
+
+        auto_btn = QPushButton("🔁 Auto-Connect Matching I/O")
+        auto_btn.setStyleSheet("""
+            font-size: 14px;
+            color: black;
+            border: 2px solid black;
+            border-radius: 6px;
+            padding: 6px 12px;
+        """)
+        auto_btn.clicked.connect(self.auto_connect_matching_io)
+        self.layout.addWidget(auto_btn)
+
+
         map_inputs_button = QPushButton("🔗 Open I/O Mapper")
         map_inputs_button.setStyleSheet("""
             font-size: 14px;
@@ -126,5 +139,41 @@ class BlockEditor(QWidget):
         print(self.block.input_mappings)
         print("✅ IOMapperDialog closed successfully.")
 
-        
+    def auto_connect_matching_io(self):
+        if not hasattr(self.block, "input_mappings"):
+            self.block.input_mappings = {}
+
+        self.block.input_mappings.clear()
+
+        output_var_map = {}
+        for conn in self.block.incoming_connections:
+            blk = conn.start_block
+            for out_name in blk.outputs.to_dict().keys():
+                output_var_map.setdefault(out_name, []).append((blk.id, out_name, blk.name))
+
+        collisions = []
+
+        for input_name in self.block.inputs.to_dict().keys():
+            var_name = input_name.split('.')[-1]
+
+            matches = output_var_map.get(var_name, [])
+            if len(matches) == 1:
+                block_id, output_name, _ = matches[0]
+                self.block.input_mappings[input_name] = {
+                    "block_id": block_id,
+                    "output_name": output_name
+                }
+            elif len(matches) > 1:
+                collisions.append(var_name)
+
+        # Show a popup or log result
+        if collisions:
+            QMessageBox.warning(
+                self,
+                "Namespace Collision",
+                f"The following variable names appear in multiple upstream blocks:\n\n" +
+                "\n".join(f"• {name}" for name in collisions)
+            )
+        else:
+            QMessageBox.information(self, "Auto-Connect", "Auto-connection completed successfully.")
 

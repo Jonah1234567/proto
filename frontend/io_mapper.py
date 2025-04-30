@@ -21,6 +21,7 @@ class IOMapperDialog(QDialog):
         title.setStyleSheet("font-weight: bold; font-size: 16px; padding-bottom: 10px;")
         main_layout.addWidget(title)
 
+
         # === Scroll area setup ===
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -160,3 +161,6 @@ class IOMapperDialog(QDialog):
                     if block_id == target_block_id and output_name == target_output_name:
                         dropdown.setCurrentIndex(idx)
                         break
+                    
+    
+    
