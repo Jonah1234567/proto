@@ -12,6 +12,8 @@ def save_file(self, filename):
             data["blocks"].append({
                 "id": block.id,
                 "name": block.name,
+                "block_type" : block.block_type,
+                "background_color" : block.background_color,
                 "x": block.pos().x(),
                 "y": block.pos().y(),
                 "code": getattr(block, "code", ""),

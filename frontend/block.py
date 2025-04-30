@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QBrush, QPen, QColor, QPainter, QAction, QPainterPath
 from PyQt6.QtCore import QRectF, QPointF, Qt
 from block_editor import BlockEditor
+from variable_block_editor import VariableBlockEditor
 import uuid
 from PyQt6.QtWidgets import QMenu
 import sys
@@ -16,13 +17,14 @@ from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
 
 class Block(QGraphicsObject):
-    def __init__(self, name, tab_widget):
+    def __init__(self, name, tab_widget, background_color="#74b9ff"):
         super().__init__()
         
         self.id = str(uuid.uuid4())  # assign unique ID
 
         
         self.name = name
+        self.block_type = "code"
         self.code = ""
         self.inputs = InputsProxy()
         self.outputs = OutputsProxy()
@@ -36,6 +38,7 @@ class Block(QGraphicsObject):
         self.incoming_connections = []
         self.outgoing_connections = []
         self.is_start_block = False
+        self.background_color= background_color
 
 
 
@@ -69,12 +72,13 @@ class Block(QGraphicsObject):
         return QRectF(0, 0, self.width, self.height)
 
     def paint(self, painter, option, widget=None):
+       
         # Draw the block background
-        painter.setBrush(QBrush(QColor("#74b9ff")))
+        painter.setBrush(QBrush(QColor(self.background_color)))
         if self.isSelected():
             painter.setPen(QPen(QColor("#d63031"), 3))  # red border
         else:
-            painter.setPen(QPen(QColor("#0984e3"), 2))  # default
+            painter.setPen(QPen(QColor("16984e3"), 2))  # default
 
         if self.is_start_block:
             painter.setPen(QPen(QColor("green"), 3))
@@ -116,7 +120,10 @@ class Block(QGraphicsObject):
         delete_action = QAction("Delete Block")
         menu.addAction(edit_action)
         menu.addAction(delete_action)
-        edit_action.triggered.connect(self.open_editor)
+        if self.block_type=="code":
+            edit_action.triggered.connect(self.open_block_editor)
+        elif self.block_type=="variable":
+            edit_action.triggered.connect(self.open_variable_block_editor)
         delete_action.triggered.connect(self.delete_block)
         set_start_action = QAction("Set as Start Block")
         set_start_action.triggered.connect(self.mark_as_start_block)
@@ -125,12 +132,21 @@ class Block(QGraphicsObject):
         
 
 
-    def open_editor(self):
+    def open_block_editor(self):
         for i in range(self.tab_widget.count()):
             if self.tab_widget.tabText(i) == self.name:
                 self.tab_widget.setCurrentIndex(i)
                 return
         editor = BlockEditor(self, self.tab_widget)
+        self.tab_widget.addTab(editor, self.name)
+        self.tab_widget.setCurrentWidget(editor)
+
+    def open_variable_block_editor(self):
+        for i in range(self.tab_widget.count()):
+            if self.tab_widget.tabText(i) == self.name:
+                self.tab_widget.setCurrentIndex(i)
+                return
+        editor = VariableBlockEditor(self, self.tab_widget)
         self.tab_widget.addTab(editor, self.name)
         self.tab_widget.setCurrentWidget(editor)
 

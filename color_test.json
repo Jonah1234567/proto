@@ -1,0 +1,31 @@
+{
+    "blocks": [
+        {
+            "id": "31fc0a9c-f830-4de1-9106-ab4596e60b73",
+            "name": "Block 1",
+            "block_type": "code",
+            "background_color": "#74b9ff",
+            "x": 50.0,
+            "y": 100.0,
+            "code": "",
+            "inputs": {},
+            "outputs": {},
+            "input_mappings": {},
+            "is_start_block": false
+        },
+        {
+            "id": "6e5673b8-0a2f-4581-9e43-f4df2613aa59",
+            "name": "Block 2",
+            "block_type": "variable",
+            "background_color": "#ffeaa7",
+            "x": 70.0,
+            "y": 100.0,
+            "code": "",
+            "inputs": {},
+            "outputs": {},
+            "input_mappings": {},
+            "is_start_block": false
+        }
+    ],
+    "connections": []
+}
