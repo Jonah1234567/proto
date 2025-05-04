@@ -152,6 +152,14 @@ class Canvas(QGraphicsView):
         self.scene.addItem(block)
         self.blocks.append(block)
 
+    def add_conditional_block(self):
+        name = f"Conditonal Block {len(self.blocks) + 1}"
+        block = Block(name, self.tab_widget, background_color="#fab1a0")
+        block.block_type = "conditional"
+        block.setPos(50 + len(self.blocks) * 20, 100)
+        self.scene.addItem(block)
+        self.blocks.append(block)
+
 
     def create_connection(self, start_block, end_block):
     # Prevent duplicate connections

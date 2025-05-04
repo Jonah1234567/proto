@@ -1,65 +1,69 @@
 {
     "blocks": [
         {
-            "id": "ada6b256-d5db-4016-afdd-187823e32423",
-            "name": "Block 1",
-            "x": -480.0,
-            "y": -79.0,
-            "code": "def nums(x,y):\n\treturn x,y\nx,y = nums(5,10)\noutputs.x=x\noutputs.y=y",
+            "id": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
+            "name": "Variable Block 1",
+            "block_type": "variable",
+            "background_color": "#ffeaa7",
+            "x": -415.0,
+            "y": -22.0,
+            "code": "outputs.x = int(10)\noutputs.y = int(15)",
             "inputs": {},
             "outputs": {
-                "x": 5,
-                "y": 10
+                "x": 10,
+                "y": 15
             },
             "input_mappings": {},
             "is_start_block": true
         },
         {
-            "id": "24c12f64-f227-422f-bf41-c2124965ac6e",
+            "id": "069bd646-9452-416c-8f81-9987f063a9f4",
             "name": "Block 2",
-            "x": -181.0,
-            "y": -39.0,
-            "code": "def add(x,y):\n\treturn x+y\noutputs.z = add(inputs.x, inputs.y)",
+            "block_type": "code",
+            "background_color": "#74b9ff",
+            "x": -108.0,
+            "y": -145.0,
+            "code": "def add (x,y):\n\treturn x+y\noutputs.y = add(inputs.x, inputs.y)",
             "inputs": {
                 "x": null,
                 "y": null
             },
             "outputs": {
-                "z": 15
+                "y": 25
             },
             "input_mappings": {
                 "x": {
-                    "block_id": "ada6b256-d5db-4016-afdd-187823e32423",
+                    "block_id": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
                     "output_name": "x"
                 },
                 "y": {
-                    "block_id": "ada6b256-d5db-4016-afdd-187823e32423",
+                    "block_id": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
                     "output_name": "y"
                 }
             },
             "is_start_block": false
         },
         {
-            "id": "f9f9a9cd-b4ac-4131-b741-fa3584ae2437",
+            "id": "4a3d32e7-d9da-406b-a17c-b49c7aa85a82",
             "name": "Block 3",
-            "x": 219.0,
-            "y": -224.0,
-            "code": "def mul(x,y):\n\treturn x*y\noutputs.z=mul(inputs.x, inputs.y)",
+            "block_type": "code",
+            "background_color": "#74b9ff",
+            "x": 195.0,
+            "y": 57.0,
+            "code": "def mul(x,y):\n\treturn x*y\nprint(mul(inputs.x, inputs.y))",
             "inputs": {
                 "x": null,
                 "y": null
             },
-            "outputs": {
-                "z": 150
-            },
+            "outputs": {},
             "input_mappings": {
                 "x": {
-                    "block_id": "ada6b256-d5db-4016-afdd-187823e32423",
-                    "output_name": "y"
+                    "block_id": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
+                    "output_name": "x"
                 },
                 "y": {
-                    "block_id": "24c12f64-f227-422f-bf41-c2124965ac6e",
-                    "output_name": "z"
+                    "block_id": "069bd646-9452-416c-8f81-9987f063a9f4",
+                    "output_name": "y"
                 }
             },
             "is_start_block": false
@@ -67,16 +71,16 @@
     ],
     "connections": [
         {
-            "start_block": "ada6b256-d5db-4016-afdd-187823e32423",
-            "end_block": "24c12f64-f227-422f-bf41-c2124965ac6e"
+            "start_block": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
+            "end_block": "069bd646-9452-416c-8f81-9987f063a9f4"
         },
         {
-            "start_block": "24c12f64-f227-422f-bf41-c2124965ac6e",
-            "end_block": "f9f9a9cd-b4ac-4131-b741-fa3584ae2437"
+            "start_block": "069bd646-9452-416c-8f81-9987f063a9f4",
+            "end_block": "4a3d32e7-d9da-406b-a17c-b49c7aa85a82"
         },
         {
-            "start_block": "ada6b256-d5db-4016-afdd-187823e32423",
-            "end_block": "f9f9a9cd-b4ac-4131-b741-fa3584ae2437"
+            "start_block": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
+            "end_block": "4a3d32e7-d9da-406b-a17c-b49c7aa85a82"
         }
     ]
 }

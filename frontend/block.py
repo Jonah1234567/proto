@@ -5,6 +5,8 @@ from PyQt6.QtGui import QBrush, QPen, QColor, QPainter, QAction, QPainterPath
 from PyQt6.QtCore import QRectF, QPointF, Qt
 from block_editor import BlockEditor
 from variable_block_editor import VariableBlockEditor
+from conditional_block_editor import ConditionalBlockEditor
+from loop_block_editor import LoopBlockEditor
 import uuid
 from PyQt6.QtWidgets import QMenu
 import sys
@@ -123,7 +125,12 @@ class Block(QGraphicsObject):
         if self.block_type=="code":
             edit_action.triggered.connect(self.open_block_editor)
         elif self.block_type=="variable":
-            edit_action.triggered.connect(self.open_variable_block_editor)
+            edit_action.triggered.connect(self.open_block_editor)
+        elif self.block_type=="loop":
+            edit_action.triggered.connect(self.open_block_editor)
+        elif self.block_type=="conditional":
+            edit_action.triggered.connect(self.open_block_editor)
+
         delete_action.triggered.connect(self.delete_block)
         set_start_action = QAction("Set as Start Block")
         set_start_action.triggered.connect(self.mark_as_start_block)
@@ -137,16 +144,17 @@ class Block(QGraphicsObject):
             if self.tab_widget.tabText(i) == self.name:
                 self.tab_widget.setCurrentIndex(i)
                 return
-        editor = BlockEditor(self, self.tab_widget)
-        self.tab_widget.addTab(editor, self.name)
-        self.tab_widget.setCurrentWidget(editor)
+            
+        block_type =  self.block_type
+        if block_type == 'code':
+            editor = BlockEditor(self, self.tab_widget)
+        elif block_type == 'variable':
+            editor = VariableBlockEditor(self, self.tab_widget)
+        elif block_type == 'conditional':
+            editor = ConditionalBlockEditor(self, self.tab_widget)
+        elif block_type == 'loop':
+            editor = LoopBlockEditor(self, self.tab_widget)
 
-    def open_variable_block_editor(self):
-        for i in range(self.tab_widget.count()):
-            if self.tab_widget.tabText(i) == self.name:
-                self.tab_widget.setCurrentIndex(i)
-                return
-        editor = VariableBlockEditor(self, self.tab_widget)
         self.tab_widget.addTab(editor, self.name)
         self.tab_widget.setCurrentWidget(editor)
 

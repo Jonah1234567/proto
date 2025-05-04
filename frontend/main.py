@@ -81,6 +81,7 @@ class MainWindow(QMainWindow):
         self.add_block_menu.addAction("➕ Add Blank Block", self.canvas.add_block)
         self.add_block_menu.addAction("📦 Import From Library", self.import_from_library)
         self.add_block_menu.addAction("🔣 Add Variable Block", self.canvas.add_variable_block)
+        self.add_block_menu.addAction("🔀 Add Conditional Block", self.canvas.add_conditional_block)
 
         # 2. Create the button
         self.add_block_button = QPushButton("➕ Add Block")
