@@ -160,6 +160,14 @@ class Canvas(QGraphicsView):
         self.scene.addItem(block)
         self.blocks.append(block)
 
+    def add_loop_block(self):
+        name = f"Loop Block {len(self.blocks) + 1}"
+        block = Block(name, self.tab_widget, background_color="#55efc4")
+        block.block_type = "loop"
+        block.setPos(50 + len(self.blocks) * 20, 100)
+        self.scene.addItem(block)
+        self.blocks.append(block)
+
 
     def create_connection(self, start_block, end_block):
     # Prevent duplicate connections
