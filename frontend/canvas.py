@@ -49,6 +49,8 @@ class Canvas(QGraphicsView):
         self.setInteractive(True)
         self._panning = False
         self._pan_start = QPointF()
+        
+        self.add_start_block()
 
     def wheelEvent(self, event: QWheelEvent):
         zoom_factor = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
@@ -137,9 +139,12 @@ class Canvas(QGraphicsView):
         else:
             super().mouseReleaseEvent(event)
 
-    def add_block(self):
-        name = f"Block {len(self.blocks) + 1}"
-        block = Block(name, self.tab_widget)
+    def add_block(self, name=""):
+        print("hiii")
+        if name == "":
+            name = f"Block {len(self.blocks) + 1}"
+        print(name)
+        block = Block(name, self.tab_widget, background_color="#74b9ff")
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
         self.blocks.append(block)
@@ -167,6 +172,14 @@ class Canvas(QGraphicsView):
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
         self.blocks.append(block)
+
+    def add_start_block(self):
+        name = f"Start Block"
+        block = Block(name, self.tab_widget)
+        block.setPos(50 + len(self.blocks) * 20, 100)
+        self.scene.addItem(block)
+        self.blocks.append(block)
+        block.mark_as_start_block()
 
 
     def create_connection(self, start_block, end_block):

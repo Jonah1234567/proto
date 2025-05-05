@@ -97,7 +97,8 @@ class MainWindow(QMainWindow):
         self.add_block_button.setCursor(Qt.CursorShape.PointingHandCursor)
 
         # 3. Hook up left-click as usual
-        self.add_block_button.clicked.connect(self.canvas.add_block)
+        self.add_block_button.clicked.connect(lambda: self.canvas.add_block())
+
 
         # 4. Now safely install event filter
         self.add_block_button.installEventFilter(self)
