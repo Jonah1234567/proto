@@ -33,9 +33,11 @@ class OutputsProxy:
         return self._values.copy()
     
     def from_dict(self, d):
-        self._values = dict(d)
+        if not isinstance(d, dict):
+            raise TypeError(f"Expected dict in from_dict, got {type(d).__name__}: {d}")
+        self._values = d.copy()  # No need to wrap again in dict()
         for key, value in self._values.items():
             setattr(self, key, value)
-    
+
     def to_list(self):
         return list(self._values.keys())
