@@ -33,3 +33,19 @@ def save_file(self, filename):
         with open(filename, "w") as f:
             json.dump(data, f, indent=4)
         print(f"✅ Layout saved to {filename}")
+
+
+def save_to_template(self, path):
+    template = {
+        "name": self.name,
+        "code": self.code,
+        "block_type": self.block_type,
+        "background_color": self.background_color,
+        "inputs": self.inputs.to_dict(),
+        "outputs": self.outputs.to_dict(),
+        "input_mappings": self.input_mappings
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(template, f, indent=2)
+
