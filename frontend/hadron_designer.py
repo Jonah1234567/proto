@@ -12,16 +12,14 @@ import os
 import sys
 from pathlib import Path
 
-
-
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from backend.engine import run_all_blocks
 
-class MainWindow(QMainWindow):
-    def __init__(self):
+class HadronDesignerWindow(QMainWindow):
+    def __init__(self, controller=None):
         super().__init__()
-        self.setWindowTitle("Proto")
-        self.setGeometry(100, 100, 1200, 800)
+        self.controller = controller
+        
 
              # === Menu Bar ===
         menu_bar = self.menuBar()
@@ -190,12 +188,3 @@ class MainWindow(QMainWindow):
                 self.add_block_menu.exec(self.add_block_button.mapToGlobal(event.position().toPoint()))
                 return True  # Don't pass event on
         return super().eventFilter(source, event)
-
-
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())

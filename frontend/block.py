@@ -3,15 +3,14 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QBrush, QPen, QColor, QPainter, QAction, QPainterPath
 from PyQt6.QtCore import QRectF, QPointF, Qt
-from block_editor import BlockEditor
-from variable_block_editor import VariableBlockEditor
-from conditional_block_editor import ConditionalBlockEditor
-from loop_block_editor import LoopBlockEditor
+from block_editors.block_editor import BlockEditor
+from block_editors.variable_block_editor import VariableBlockEditor
+from block_editors.conditional_block_editor import ConditionalBlockEditor
+from block_editors.loop_block_editor import LoopBlockEditor
 import uuid
 from PyQt6.QtWidgets import QMenu
 import sys
 from pathlib import Path
-
 
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
