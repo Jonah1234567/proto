@@ -4,6 +4,12 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon, QPalette, QColor, QPainter, QBrush
 
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt6.QtGui import QPixmap, QMouseEvent, QCursor
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtWidgets import QToolButton
+
+
 
 class WelcomeScreen(QWidget):
     def __init__(self, controller):
@@ -33,26 +39,67 @@ class WelcomeScreen(QWidget):
         button_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
         button_row.setSpacing(40)
 
-        new_button = QPushButton("New Project")
+        # NEW PROJECT button
+        new_button = QToolButton()
+        new_button.setText("New Project")
         new_button.setIcon(QIcon("frontend/assets/new_project.png"))
         new_button.setIconSize(QSize(64, 64))
         new_button.setFixedSize(200, 300)
-        new_button.setStyleSheet(self._button_stylesheet())
+        new_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        new_button.setStyleSheet("""
+            QToolButton {
+                background-color: white;
+                border: 2px solid black;
+                border-radius: 20px;
+                font-size: 16px;
+                padding-top: 100px;
+            }
+            QToolButton:hover {
+                background-color: #f0f0f0;
+            }
+        """)
         new_button.clicked.connect(self.controller.switch_to_editor)
 
-        load_button = QPushButton("Load Project")
+        # LOAD PROJECT button
+        load_button = QToolButton()
+        load_button.setText("Load Project")
         load_button.setIcon(QIcon("frontend/assets/load_project.png"))
         load_button.setIconSize(QSize(64, 64))
         load_button.setFixedSize(200, 300)
-        load_button.setStyleSheet(self._button_stylesheet())
+        load_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        load_button.setStyleSheet("""
+            QToolButton {
+                background-color: white;
+                border: 2px solid black;
+                border-radius: 20px;
+                font-size: 16px;
+                padding-top: 100px;
+            }
+            QToolButton:hover {
+                background-color: #f0f0f0;
+            }
+        """)
         load_button.clicked.connect(self.load_existing_project)
 
-        tutorial_button = QPushButton("View Tutorial")
+        # VIEW TUTORIAL button
+        tutorial_button = QToolButton()
+        tutorial_button.setText("View Tutorial")
         tutorial_button.setIcon(QIcon("frontend/assets/tutorial.png"))
         tutorial_button.setIconSize(QSize(64, 64))
         tutorial_button.setFixedSize(200, 300)
-        tutorial_button.setStyleSheet(self._button_stylesheet())
-        ## This is not finished
+        tutorial_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        tutorial_button.setStyleSheet("""
+            QToolButton {
+                background-color: white;
+                border: 2px solid black;
+                border-radius: 20px;
+                font-size: 16px;
+                padding-top: 100px;
+            }
+            QToolButton:hover {
+                background-color: #f0f0f0;
+            }
+        """)
 
         button_row.addWidget(new_button)
         button_row.addWidget(load_button)
