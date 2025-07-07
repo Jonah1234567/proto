@@ -100,6 +100,7 @@ class WelcomeScreen(QWidget):
                 background-color: #f0f0f0;
             }
         """)
+        tutorial_button.clicked.connect(self.controller.switch_to_under_construction)
 
         button_row.addWidget(new_button)
         button_row.addWidget(load_button)

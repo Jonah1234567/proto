@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QFileDialog
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QFileDialog, QSpacerItem
 )
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon, QPalette, QColor, QPainter, QBrush
@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt6.QtGui import QPixmap, QMouseEvent, QCursor
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import QToolButton
+from components.back_button import BackButton
 
 
 
@@ -79,7 +80,7 @@ class NewProjectConfigurationScreen(QWidget):
                 background-color: #f0f0f0;
             }
         """)
-        infrastructure_project_button.clicked.connect(self.load_existing_project)
+        infrastructure_project_button.clicked.connect(self.controller.switch_to_under_construction)
 
 
         button_row.addWidget(functional_project_button)
@@ -89,6 +90,15 @@ class NewProjectConfigurationScreen(QWidget):
         main_layout.addWidget(title)
         main_layout.addWidget(blurb)
         main_layout.addLayout(button_row)
+        
+        main_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+
+        # Bottom row for the button
+        bottom_row = QHBoxLayout()
+        bottom_row.addWidget(BackButton(self.controller), alignment=Qt.AlignmentFlag.AlignLeft)
+        bottom_row.addStretch()  # pushes everything to the left
+
+        main_layout.addLayout(bottom_row)
         self.setLayout(main_layout)
 
     def _button_stylesheet(self):
