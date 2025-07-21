@@ -39,10 +39,14 @@ def save_file(self, filename):
 
 
 def save_to_template(block):
+    pth = None
+    if block.filepath != None:
+         pth = block.filepath
+
     path, _ = QFileDialog.getSaveFileName(
         None,
         "Save Block as Template",
-        f"{block.name}.hdrn",
+        pth,
         "Block Templates (*.hdrn)"
     )
 
@@ -64,6 +68,8 @@ def save_to_template(block):
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(template, f, indent=2)
+
+    block.filepath = path
 
     print(f"✅ Block saved to template: {path}")
 

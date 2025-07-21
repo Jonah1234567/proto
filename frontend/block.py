@@ -41,6 +41,7 @@ class Block(QGraphicsObject):
         self.outgoing_connections = []
         self.is_start_block = False
         self.background_color= background_color
+        self.filepath = None
 
 
 
