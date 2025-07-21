@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
+from backend.saving import save_to_template
 
 class Block(QGraphicsObject):
     def __init__(self, name, tab_widget, background_color="#74b9ff"):
@@ -136,6 +137,10 @@ class Block(QGraphicsObject):
         set_start_action = QAction("Set as Start Block")
         set_start_action.triggered.connect(self.mark_as_start_block)
         menu.addAction(set_start_action)
+
+        save_block_action = QAction("Save Block")
+        save_block_action.triggered.connect(lambda: save_to_template(self))
+        menu.addAction(save_block_action)
         menu.exec(event.screenPos())
         
 

@@ -17,6 +17,8 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from backend.engine import run_all_blocks
+from backend.saving import save_to_template
+
 class HadronDesignerWindow(QMainWindow):
     def __init__(self, controller=None):
         super().__init__()
@@ -144,7 +146,6 @@ class HadronDesignerWindow(QMainWindow):
         except Exception as e:
             print("Could not load stylesheet:", e)
 
-    
     def redirector(self, inputStr):
             self.output_box.moveCursor(QTextCursor.MoveOperation.End)
             self.output_box.insertPlainText(inputStr)

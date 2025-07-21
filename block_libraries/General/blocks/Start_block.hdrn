@@ -1,0 +1,9 @@
+{
+  "name": "Start Block",
+  "code": "print('hi')",
+  "block_type": "code",
+  "background_color": "#74b9ff",
+  "inputs": {},
+  "outputs": {},
+  "input_mappings": {}
+}

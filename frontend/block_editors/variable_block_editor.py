@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
-
+from backend.saving import save_to_template
 
 class VariableBlockEditor(QWidget):
     def __init__(self, block, tab_widget):
@@ -34,6 +34,17 @@ class VariableBlockEditor(QWidget):
         self.add_variable_button = QPushButton("➕ Add Variable")
         self.add_variable_button.clicked.connect(self.add_variable_row)
         self.layout.addWidget(self.add_variable_button)
+
+        save_block_button = QPushButton("💾 Save Block to File")
+        save_block_button.setStyleSheet("""
+            font-size: 14px;
+            color: black;
+            border: 2px solid black;
+            border-radius: 6px;
+            padding: 6px 12px;
+        """)
+        save_block_button.clicked.connect(lambda: save_to_template(block))
+        self.layout.addWidget(save_block_button)
 
         # Show code checkbox + output
         self.show_code_checkbox = QCheckBox("Show Generated Code")

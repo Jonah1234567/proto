@@ -163,11 +163,11 @@ class BlockLibraryDialog(QDialog):
             item_path = os.path.join(blocks_dir, item)
 
             # Case 1: JSON block file
-            if os.path.isfile(item_path) and item.endswith(".json"):
+            if os.path.isfile(item_path) and item.endswith(".hdrn"):
                 try:
                     with open(item_path, "r") as f:
                         template = json.load(f)
-                        name = template.get("name", item.replace(".json", ""))
+                        name = template.get("name", item.replace(".hdrn", ""))
                         btn = QPushButton(f"📄 {name}")
                         btn.setStyleSheet("text-align: left; color: black;")
                         btn.clicked.connect(lambda _, t=template: self.select_template(t))

@@ -8,7 +8,7 @@ from backend.outputs_proxy import OutputsProxy
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[2]))
-
+from backend.saving import save_to_template
 
 class ConditionalBlockEditor(QWidget):
     def __init__(self, block, tab_widget):
@@ -26,6 +26,17 @@ class ConditionalBlockEditor(QWidget):
         self.condition_blocks = []
         self.condition_block_layout = QVBoxLayout()
         self.layout.addLayout(self.condition_block_layout)
+
+        save_block_button = QPushButton("💾 Save Block to File")
+        save_block_button.setStyleSheet("""
+            font-size: 14px;
+            color: black;
+            border: 2px solid black;
+            border-radius: 6px;
+            padding: 6px 12px;
+        """)
+        save_block_button.clicked.connect(lambda: save_to_template(block))
+        self.layout.addWidget(save_block_button)
 
         # Add default IF block
         self.add_condition_block("if")

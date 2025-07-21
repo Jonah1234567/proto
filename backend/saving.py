@@ -1,4 +1,6 @@
 import json
+from PyQt6.QtWidgets import QFileDialog
+import json
 
 def save_file(self, filename):
         data = {
@@ -35,17 +37,33 @@ def save_file(self, filename):
         print(f"✅ Layout saved to {filename}")
 
 
-def save_to_template(self, path):
+
+def save_to_template(block):
+    path, _ = QFileDialog.getSaveFileName(
+        None,
+        "Save Block as Template",
+        f"{block.name}.hdrn",
+        "Block Templates (*.hdrn)"
+    )
+
+    if not path:
+        return  # User cancelled
+
+    if not path.endswith(".hdrn"):
+        path += ".hdrn"
+
     template = {
-        "name": self.name,
-        "code": self.code,
-        "block_type": self.block_type,
-        "background_color": self.background_color,
-        "inputs": self.inputs.to_dict(),
-        "outputs": self.outputs.to_dict(),
-        "input_mappings": self.input_mappings
+        "name": block.name,
+        "code": block.code,
+        "block_type": block.block_type,
+        "background_color": block.background_color,
+        "inputs": block.inputs.to_dict(),
+        "outputs": block.outputs.to_dict(),
+        "input_mappings": block.input_mappings
     }
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(template, f, indent=2)
+
+    print(f"✅ Block saved to template: {path}")
 

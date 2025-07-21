@@ -12,6 +12,7 @@ sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
+from backend.saving import save_to_template
 
 class BlockEditor(QWidget):
     def __init__(self, block, tab_widget):
@@ -68,6 +69,17 @@ class BlockEditor(QWidget):
         """)
         map_inputs_button.clicked.connect(self.open_io_mapper)
         self.layout.addWidget(map_inputs_button)
+
+        save_block_button = QPushButton("💾 Save Block to File")
+        save_block_button.setStyleSheet("""
+            font-size: 14px;
+            color: black;
+            border: 2px solid black;
+            border-radius: 6px;
+            padding: 6px 12px;
+        """)
+        save_block_button.clicked.connect(lambda: save_to_template(block))
+        self.layout.addWidget(save_block_button)
 
 
         # === Connected Blocks: BEFORE ===
