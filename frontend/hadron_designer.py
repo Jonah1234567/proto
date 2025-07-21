@@ -4,7 +4,10 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QMenuBar, QMenu, QFileDialog
+from PyQt6.QtGui import QTextCursor
 from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QTextEdit
+
 from canvas import Canvas
 from block_library_dialog import BlockLibraryDialog
 import os
@@ -14,7 +17,6 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from backend.engine import run_all_blocks
-
 class HadronDesignerWindow(QMainWindow):
     def __init__(self, controller=None):
         super().__init__()
@@ -120,14 +122,37 @@ class HadronDesignerWindow(QMainWindow):
         bottom_row.setContentsMargins(0, 10, 10, 10)
         main_layout.addLayout(bottom_row)
 
-      
+        # === Output Box ===
+        self.output_box = QTextEdit()
+        self.output_box.setReadOnly(True)
+        self.output_box.setStyleSheet("""
+            QTextEdit {
+                background-color: #f5f5f5;
+                color: black;
+                font-family: monospace;
+                border: 2px solid black;
+                border-radius: 6px;
+            }
+        """)
+
+        self.output_box.setFixedHeight(150)
+        main_layout.addWidget(self.output_box)
         # === Optional: Load stylesheet ===
         try:
             with open("./frontend/styles.qss", "r") as f:
                 self.setStyleSheet(f.read())
         except Exception as e:
             print("Could not load stylesheet:", e)
+
+    
+    def redirector(self, inputStr):
+            self.output_box.moveCursor(QTextCursor.MoveOperation.End)
+            self.output_box.insertPlainText(inputStr)
         
+    def append_output(self, text):
+        self.output_box.moveCursor(self.output_box.textCursor().End)
+        self.output_box.insertPlainText(text)
+
 
     def on_tab_changed(self, index):
         tab_name = self.tabs.tabText(index)
@@ -162,7 +187,7 @@ class HadronDesignerWindow(QMainWindow):
 
     def run_blocks(self):
         print("▶ Executing all blocks...")
-        run_all_blocks(self.canvas)
+        run_all_blocks(self, self.canvas)
 
        
     def save_layout_prompt(self):

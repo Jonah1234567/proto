@@ -1,14 +1,20 @@
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-
+import io
+import contextlib
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
-def run_block(canvas, block, context, code):
+original_stdout = sys.stdout.write
+original_stderr = sys.stderr.write
+
+
+def run_block(window, canvas, block, context, code):
     all_blocks_by_id = {block.id: block for block in canvas.blocks}
 
+    
 
     # === Step 1: Gather input values
     inputs = {}
@@ -30,9 +36,18 @@ def run_block(canvas, block, context, code):
         "outputs": SimpleNamespace()
     }
 
+
     # === Step 3: Execute the block's code
     try:
-        exec(block.code, {}, local_vars)
+        sys.stdout.write = window.redirector
+        sys.stderr.write = window.redirector
+
+        exec(code)
+
+        sys.stdout.write = original_stdout
+        sys.stderr.write = original_stderr
+
+
     except Exception as e:
         print(f"❌ Error in block [{block.name}]:", e)
 
@@ -42,7 +57,7 @@ def run_block(canvas, block, context, code):
             setattr(block.outputs, key, value)
    
 
-def run_all_blocks(canvas):
+def run_all_blocks(window, canvas):
     blocks = canvas.blocks
     connections = canvas.connections
 
@@ -86,6 +101,6 @@ def run_all_blocks(canvas):
         if not code:
             continue
 
-        run_block(canvas, block, context, code)
+        run_block(window, canvas, block, context, code)
 
         
