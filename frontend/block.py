@@ -66,6 +66,8 @@ class Block(QGraphicsObject):
         port.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemIsSelectable, False)
         port.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemIsMovable, False)
         port.setZValue(10)
+        port.setData(0, self)
+
 
         return port
 

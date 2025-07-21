@@ -205,6 +205,7 @@ class HadronDesignerWindow(QMainWindow):
         if dialog.exec():
             template = dialog.get_selected_template()
             if template:
+                print('firing')
                 self.canvas.load_block_from_template_wrapper(template)
 
     def eventFilter(self, source, event):

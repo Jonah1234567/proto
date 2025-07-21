@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QGraphicsObject
 from PyQt6.QtGui import QPainter, QColor, QWheelEvent, QPen
 from PyQt6.QtCore import Qt, QPointF
-from block import Block
+
 from connection import Connection
 from connection import ConnectionLine
 import json
@@ -13,6 +13,7 @@ from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
 from backend.saving import save_file
 from backend.loading import load_file, load_block_from_template
+from frontend.block import Block
 
 
 class Canvas(QGraphicsView):
@@ -64,15 +65,24 @@ class Canvas(QGraphicsView):
         selected = self.scene.selectedItems()
         print(f"Selected items: {len(selected)}")
 
-        def get_block_parent(i):
-            while i and not isinstance(i, Block):
-                i = i.parentItem()
-            return i
+        def get_block_from_item(item):
+            if isinstance(item, QGraphicsEllipseItem):
+                block = item.data(0)
+                if isinstance(block, Block):
+                    return block
+                else:
+                    print("⚠️ Port has no valid block attached!")
+                    return None
+            elif isinstance(item, Block):
+                return item
+            return None
+
+
 
         if event.button() == Qt.MouseButton.LeftButton:
             
             if isinstance(item, QGraphicsEllipseItem):
-                parent = get_block_parent(item)
+                parent = get_block_from_item(item)
                 tooltip = item.toolTip()
                 print(tooltip)
 
@@ -89,7 +99,7 @@ class Canvas(QGraphicsView):
                         print("⚠️ Clicked input with no connection started")
 
             else:
-                block = get_block_parent(item)
+                block = get_block_from_item(item)
                 if block and self.connection_start and block != self.connection_start:
                     print("✅ Completing connection via block body — autosnap to input port")
                     self.create_connection(self.connection_start, block)
@@ -183,7 +193,7 @@ class Canvas(QGraphicsView):
 
 
     def create_connection(self, start_block, end_block):
-    # Prevent duplicate connections
+        print(start_block, end_block)
         for conn in self.connections:
             if conn.start_block == start_block and conn.end_block == end_block:
                 print("🚫 Duplicate connection ignored")
@@ -209,7 +219,9 @@ class Canvas(QGraphicsView):
         load_file(self, filename)
     
     def load_block_from_template_wrapper(self, template):
-        load_block_from_template(self, template)
+        block = load_block_from_template(self, template)
+        self.scene.addItem(block)
+        self.blocks.append(block)
 
 
 

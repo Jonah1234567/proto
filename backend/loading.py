@@ -68,8 +68,9 @@ def load_block_from_template(self, template):
     block.input_mappings = input_mappings
     block.setPos(100 + len(self.blocks) * 30, 100 + len(self.blocks) * 20)
 
-    
+    print("🧩 Created block from template:", block.name)
+    print("   input_port:", block.input_port)
+    print("   input_port.data(0):", block.input_port.data(0))
 
-    self.scene.addItem(block)
-    self.blocks.append(block)
+    return block
     
