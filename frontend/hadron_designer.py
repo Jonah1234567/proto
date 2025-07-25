@@ -14,6 +14,9 @@ import os
 
 import sys
 from pathlib import Path
+from hadron_project_configuration import HadronProjectConfiguration
+
+
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from backend.engine import run_all_blocks
@@ -62,6 +65,10 @@ class HadronDesignerWindow(QMainWindow):
         self.canvas = Canvas(self.tabs)  # Pass tab widget so blocks can open editor tabs
         canvas_layout.addWidget(self.canvas)
 
+        self.config_tab = HadronProjectConfiguration(controller=self, tab_widget=self.tabs)
+        self.tabs.addTab(self.config_tab, "🛠 Project Config")
+        self.tabs.setCurrentWidget(self.config_tab)  # <- this makes it the main tab on open
+
         self.tabs.setStyleSheet("""
             QTabBar::tab {
                 color: black;
@@ -72,7 +79,6 @@ class HadronDesignerWindow(QMainWindow):
         self.tabs.tabCloseRequested.connect(self.close_tab)
 
 
-        self.tabs.addTab(canvas_tab, "Canvas")
         self.tabs.currentChanged.connect(self.on_tab_changed)
         # === Bottom Buttons ===
         bottom_row = QHBoxLayout()

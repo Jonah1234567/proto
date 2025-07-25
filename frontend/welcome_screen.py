@@ -136,6 +136,7 @@ class WelcomeScreen(QWidget):
         painter.drawRect(self.rect())
 
     def load_existing_project(self):
+        # refactor to controller please Jonah
         path, _ = QFileDialog.getOpenFileName(self, "Load Layout", "", "JSON Files (*.json)")
         if path:
             self.controller.editor_view.canvas.load_layout(path)

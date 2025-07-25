@@ -59,7 +59,9 @@ class NewProjectConfigurationScreen(QWidget):
                 background-color: #f0f0f0;
             }
         """)
-        functional_project_button.clicked.connect(self.controller.switch_to_editor)
+        functional_project_button.clicked.connect(
+            lambda: self.controller.switch_to_new_project( "hadron")
+        )
 
         # LOAD PROJECT button
         infrastructure_project_button = QToolButton()
@@ -80,7 +82,10 @@ class NewProjectConfigurationScreen(QWidget):
                 background-color: #f0f0f0;
             }
         """)
-        infrastructure_project_button.clicked.connect(self.controller.switch_to_under_construction)
+        infrastructure_project_button.clicked.connect(
+            lambda: self.controller.switch_to_under_construction()
+        )
+
 
 
         button_row.addWidget(functional_project_button)
