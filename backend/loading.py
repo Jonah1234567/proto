@@ -10,6 +10,7 @@ from frontend.block import Block
 from frontend.connection import Connection
 
 def load_file(self, filename):
+    print("fire")
     with open(filename, "r") as f:
         data = json.load(f)
 

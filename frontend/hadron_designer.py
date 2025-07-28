@@ -16,11 +16,12 @@ import sys
 from pathlib import Path
 from hadron_project_configuration import HadronProjectConfiguration
 
-
+from components.file_sidebar import FileSidebar
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from backend.engine import run_all_blocks
 from backend.saving import save_to_template
+from backend.loading import load_file
 
 class HadronDesignerWindow(QMainWindow):
     def __init__(self, controller=None):
@@ -41,50 +42,55 @@ class HadronDesignerWindow(QMainWindow):
         load_action.triggered.connect(self.load_layout_prompt)
         file_menu.addAction(load_action)
 
-        # === Main vertical layout ===
+       # === Main vertical layout ===
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
 
         # === Title bar ===
         title = QLabel("Proto")
-
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("font-size: 36px; font-weight: bold; padding: 10px;")
         main_layout.addWidget(title)
 
-        # === Editor Tabs (Canvas + Block editors) ===
-        self.tabs = QTabWidget()
-        self.tabs.setTabBarAutoHide(False)  # <- force tabs to always be visible
-        main_layout.addWidget(self.tabs)
+        # === Horizontal layout: Sidebar + Editor Content ===
+        content_row = QHBoxLayout()
 
-        # === Canvas tab ===
+        # === Sidebar on the left ===
+        print(self.controller.project.base_path)
+        sidebar = FileSidebar(str(self.controller.project.base_path))
+        sidebar.setFixedWidth(240)
+        sidebar.file_open_requested.connect(self.open_quark_file)
+        content_row.addWidget(sidebar)
+
+        # === Right side layout for tabs + buttons + output ===
+        editor_area = QVBoxLayout()
+
+        # === Editor Tabs ===
+        self.tabs = QTabWidget()
+        self.tabs.setTabBarAutoHide(False)
+        editor_area.addWidget(self.tabs)
+
+        # Canvas tab
         canvas_tab = QWidget()
         canvas_layout = QVBoxLayout(canvas_tab)
-
-        self.canvas = Canvas(self.tabs)  # Pass tab widget so blocks can open editor tabs
+        self.canvas = Canvas(self.tabs)
         canvas_layout.addWidget(self.canvas)
 
+        # Config tab
         self.config_tab = HadronProjectConfiguration(controller=self, tab_widget=self.tabs)
         self.tabs.addTab(self.config_tab, "🛠 Project Config")
-        self.tabs.setCurrentWidget(self.config_tab)  # <- this makes it the main tab on open
+        self.tabs.setCurrentWidget(self.config_tab)
 
-        self.tabs.setStyleSheet("""
-            QTabBar::tab {
-                color: black;
-            }
-        """)
-
+        self.tabs.setStyleSheet("QTabBar::tab { color: black; }")
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(self.close_tab)
-
-
         self.tabs.currentChanged.connect(self.on_tab_changed)
+
         # === Bottom Buttons ===
         bottom_row = QHBoxLayout()
         bottom_row.addStretch()
 
-        # 1. Create the menu first
         self.add_block_menu = QMenu(self)
         self.add_block_menu.addAction("➕ Add Blank Block", self.canvas.add_block)
         self.add_block_menu.addAction("📦 Import From Library", self.import_from_library)
@@ -92,7 +98,6 @@ class HadronDesignerWindow(QMainWindow):
         self.add_block_menu.addAction("🔀 Add Conditional Block", self.canvas.add_conditional_block)
         self.add_block_menu.addAction("🔁 Add Loop Block", self.canvas.add_loop_block)
 
-        # 2. Create the button
         self.add_block_button = QPushButton("➕ Add Block")
         self.add_block_button.setFixedWidth(200)
         self.add_block_button.setStyleSheet("""
@@ -103,12 +108,7 @@ class HadronDesignerWindow(QMainWindow):
             border-radius: 8px;
         """)
         self.add_block_button.setCursor(Qt.CursorShape.PointingHandCursor)
-
-        # 3. Hook up left-click as usual
         self.add_block_button.clicked.connect(lambda: self.canvas.add_block())
-
-
-        # 4. Now safely install event filter
         self.add_block_button.installEventFilter(self)
 
         self.run_button = QPushButton("▶ Run")
@@ -124,11 +124,9 @@ class HadronDesignerWindow(QMainWindow):
         self.run_button.clicked.connect(self.run_blocks)
 
         bottom_row.addWidget(self.run_button)
-
-
         bottom_row.addWidget(self.add_block_button)
         bottom_row.setContentsMargins(0, 10, 10, 10)
-        main_layout.addLayout(bottom_row)
+        editor_area.addLayout(bottom_row)
 
         # === Output Box ===
         self.output_box = QTextEdit()
@@ -142,15 +140,22 @@ class HadronDesignerWindow(QMainWindow):
                 border-radius: 6px;
             }
         """)
-
         self.output_box.setFixedHeight(150)
-        main_layout.addWidget(self.output_box)
-        # === Optional: Load stylesheet ===
+        editor_area.addWidget(self.output_box)
+
+        # Add right editor area to horizontal layout
+        content_row.addLayout(editor_area)
+
+        # Add the horizontal content row to the main vertical layout
+        main_layout.addLayout(content_row)
+
+        # Optional: load stylesheet
         try:
             with open("./frontend/styles.qss", "r") as f:
                 self.setStyleSheet(f.read())
         except Exception as e:
             print("Could not load stylesheet:", e)
+
 
     def redirector(self, inputStr):
             self.output_box.moveCursor(QTextCursor.MoveOperation.End)
@@ -221,3 +226,10 @@ class HadronDesignerWindow(QMainWindow):
                 self.add_block_menu.exec(self.add_block_button.mapToGlobal(event.position().toPoint()))
                 return True  # Don't pass event on
         return super().eventFilter(source, event)
+
+    def open_quark_file(self, path: str):
+        file_name = Path(path).name
+        new_canvas = Canvas(self.tabs)
+        new_canvas.load_layout(path)
+        self.tabs.addTab(new_canvas, f"📄 {file_name}")
+        self.tabs.setCurrentWidget(new_canvas)

@@ -1,0 +1,86 @@
+{
+    "blocks": [
+        {
+            "id": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
+            "name": "Variable Block 1",
+            "block_type": "variable",
+            "background_color": "#ffeaa7",
+            "x": -415.0,
+            "y": -22.0,
+            "code": "outputs.x = int(10)\noutputs.y = int(15)",
+            "inputs": {},
+            "outputs": {
+                "x": 10,
+                "y": 15
+            },
+            "input_mappings": {},
+            "is_start_block": true
+        },
+        {
+            "id": "069bd646-9452-416c-8f81-9987f063a9f4",
+            "name": "Block 2",
+            "block_type": "code",
+            "background_color": "#74b9ff",
+            "x": -108.0,
+            "y": -145.0,
+            "code": "def add (x,y):\n\treturn x+y\noutputs.y = add(inputs.x, inputs.y)",
+            "inputs": {
+                "x": null,
+                "y": null
+            },
+            "outputs": {
+                "y": 25
+            },
+            "input_mappings": {
+                "x": {
+                    "block_id": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
+                    "output_name": "x"
+                },
+                "y": {
+                    "block_id": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
+                    "output_name": "y"
+                }
+            },
+            "is_start_block": false
+        },
+        {
+            "id": "4a3d32e7-d9da-406b-a17c-b49c7aa85a82",
+            "name": "Block 3",
+            "block_type": "code",
+            "background_color": "#74b9ff",
+            "x": 195.0,
+            "y": 57.0,
+            "code": "def mul(x,y):\n\treturn x*y\nprint(mul(inputs.x, inputs.y))",
+            "inputs": {
+                "x": null,
+                "y": null
+            },
+            "outputs": {},
+            "input_mappings": {
+                "x": {
+                    "block_id": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
+                    "output_name": "x"
+                },
+                "y": {
+                    "block_id": "069bd646-9452-416c-8f81-9987f063a9f4",
+                    "output_name": "y"
+                }
+            },
+            "is_start_block": false
+        }
+    ],
+    "connections": [
+        {
+            "start_block": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
+            "end_block": "069bd646-9452-416c-8f81-9987f063a9f4"
+        },
+        {
+            "start_block": "069bd646-9452-416c-8f81-9987f063a9f4",
+            "end_block": "4a3d32e7-d9da-406b-a17c-b49c7aa85a82"
+        },
+        {
+            "start_block": "6895a2a0-406b-49b9-8bdf-8eb98f548b97",
+            "end_block": "4a3d32e7-d9da-406b-a17c-b49c7aa85a82"
+        }
+    ]
+}

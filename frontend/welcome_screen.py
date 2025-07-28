@@ -8,8 +8,11 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt6.QtGui import QPixmap, QMouseEvent, QCursor
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import QToolButton
+from components.file_dialogue import prompt_load_project_folder
 
 
+import sys
+from pathlib import Path
 
 class WelcomeScreen(QWidget):
     def __init__(self, controller):
@@ -79,7 +82,7 @@ class WelcomeScreen(QWidget):
                 background-color: #f0f0f0;
             }
         """)
-        load_button.clicked.connect(self.load_existing_project)
+        load_button.clicked.connect(self.controller.switch_to_existing_project)
 
         # VIEW TUTORIAL button
         tutorial_button = QToolButton()
@@ -135,9 +138,4 @@ class WelcomeScreen(QWidget):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRect(self.rect())
 
-    def load_existing_project(self):
-        # refactor to controller please Jonah
-        path, _ = QFileDialog.getOpenFileName(self, "Load Layout", "", "JSON Files (*.json)")
-        if path:
-            self.controller.editor_view.canvas.load_layout(path)
-            self.controller.switch_to_editor()
+
