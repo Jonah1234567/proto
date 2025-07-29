@@ -26,7 +26,7 @@ def load_file(self, filename):
     id_to_block = {}
     for block_data in data["blocks"]:
         block = Block(block_data["name"], self.tab_widget)
-        block.block_type = block_data["block_type"],
+        block.block_type = block_data["block_type"]
         block.id = block_data["id"]
         block.background_color = block_data["background_color"]
         block.code = block_data.get("code", "")

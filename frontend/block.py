@@ -77,13 +77,12 @@ class Block(QGraphicsObject):
         return QRectF(0, 0, self.width, self.height)
 
     def paint(self, painter, option, widget=None):
-       
         # Draw the block background
         painter.setBrush(QBrush(QColor(self.background_color)))
         if self.isSelected():
             painter.setPen(QPen(QColor("#d63031"), 3))  # red border
         else:
-            painter.setPen(QPen(QColor("16984e3"), 2))  # default
+            painter.setPen(QPen(QColor("#4984e3"), 2))  # default — fixed color typo
 
         if self.is_start_block:
             painter.setPen(QPen(QColor("green"), 3))
@@ -92,7 +91,10 @@ class Block(QGraphicsObject):
 
         # Draw the block name
         painter.setPen(QColor("black"))
-        painter.drawText(10, 25, self.name)
+
+        # 🛠️ Ensure name is a string
+        name_to_draw = str(self.name) if self.name is not None else "Unnamed Block"
+        painter.drawText(10, 25, name_to_draw)
 
     def mousePressEvent(self, event):
         pos = event.pos()
@@ -125,14 +127,7 @@ class Block(QGraphicsObject):
         delete_action = QAction("Delete Block")
         menu.addAction(edit_action)
         menu.addAction(delete_action)
-        if self.block_type=="code":
-            edit_action.triggered.connect(self.open_block_editor)
-        elif self.block_type=="variable":
-            edit_action.triggered.connect(self.open_block_editor)
-        elif self.block_type=="loop":
-            edit_action.triggered.connect(self.open_block_editor)
-        elif self.block_type=="conditional":
-            edit_action.triggered.connect(self.open_block_editor)
+        edit_action.triggered.connect(self.open_block_editor)
 
         delete_action.triggered.connect(self.delete_block)
         set_start_action = QAction("Set as Start Block")
@@ -147,23 +142,30 @@ class Block(QGraphicsObject):
 
 
     def open_block_editor(self):
+        print('🛠 Opening editor for:', self.name, '| block_type:', self.block_type)
+
         for i in range(self.tab_widget.count()):
             if self.tab_widget.tabText(i) == self.name:
                 self.tab_widget.setCurrentIndex(i)
                 return
-            
-        block_type =  self.block_type
-        if block_type == 'code':
+
+        editor = None
+
+        if self.block_type == 'code':
             editor = BlockEditor(self, self.tab_widget)
-        elif block_type == 'variable':
+        elif self.block_type == 'variable':
             editor = VariableBlockEditor(self, self.tab_widget)
-        elif block_type == 'conditional':
+        elif self.block_type == 'conditional':
             editor = ConditionalBlockEditor(self, self.tab_widget)
-        elif block_type == 'loop':
+        elif self.block_type == 'loop':
             editor = LoopBlockEditor(self, self.tab_widget)
+        else:
+            print(f"❌ Unknown block type: {self.block_type!r}")
+            return  # or raise an error
 
         self.tab_widget.addTab(editor, self.name)
         self.tab_widget.setCurrentWidget(editor)
+
 
     def delete_block(self):
         scene = self.scene()
