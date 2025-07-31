@@ -114,6 +114,18 @@ class HadronDesignerWindow(QMainWindow):
         if set_as_main:
             self.canvas = canvas
 
+            # === Clean up previous buttons ===
+            if self.add_block_button is not None:
+                self.bottom_row.removeWidget(self.add_block_button)
+                self.add_block_button.deleteLater()
+                self.add_block_button = None
+
+            if self.run_button is not None:
+                self.bottom_row.removeWidget(self.run_button)
+                self.run_button.deleteLater()
+                self.run_button = None
+
+            # === Create new menu and buttons ===
             self.add_block_menu = QMenu(self)
             self.add_block_menu.addAction("➕ Add Blank Block", canvas.add_block)
             self.add_block_menu.addAction("📦 Import From Library", self.import_from_library)
