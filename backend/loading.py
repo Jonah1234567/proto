@@ -12,7 +12,12 @@ from frontend.connection import Connection
 def load_file(self, filename):
     print("fire")
     with open(filename, "r") as f:
-        data = json.load(f)
+        contents = f.read()
+        if not contents.strip():
+            print("⚠️ File is empty, skipping load.")
+            return
+        data = json.loads(contents)
+
 
     # Clear current layout
     for block in self.blocks:

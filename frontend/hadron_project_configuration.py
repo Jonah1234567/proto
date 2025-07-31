@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton,
-    QFileDialog, QComboBox, QHBoxLayout, QMessageBox, QFrame
+    QFileDialog, QComboBox, QHBoxLayout, QMessageBox, QGroupBox, QFormLayout
 )
-
+from PyQt6.QtCore import Qt
 
 class HadronProjectConfiguration(QWidget):
     def __init__(self, controller, tab_widget):
@@ -11,63 +11,49 @@ class HadronProjectConfiguration(QWidget):
         self.tab_widget = tab_widget
         self.setStyleSheet("color: black;")
 
-        # === Outer layout for this tab ===
-        outer_layout = QVBoxLayout(self)
+        # === Main Layout ===
+        main_layout = QVBoxLayout(self)
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        # === Bordered Frame (like canvas border) ===
-        self.frame = QFrame()
-        self.frame.setFrameShape(QFrame.Shape.Box)
-        self.frame.setLineWidth(2)
-        self.frame.setStyleSheet("""
-            QFrame {
-                border: 2px solid #dcdde1;
-                border-radius: 10px;
-                background-color: white;
-            }
-        """)
+        # === Section 1: Project Overview ===
+        overview_box = QGroupBox("📁 Project Overview")
+        overview_layout = QFormLayout()
 
-        inner_layout = QVBoxLayout(self.frame)
-
-        # === Project Name ===
-        inner_layout.addWidget(QLabel("Project Name:"))
         self.name_input = QLineEdit()
-        inner_layout.addWidget(self.name_input)
+        overview_layout.addRow("Project Name:", self.name_input)
 
-        # === Save Directory ===
-        inner_layout.addWidget(QLabel("Save Directory:"))
-        dir_layout = QHBoxLayout()
+        self.type_combo = QComboBox()
+        self.type_combo.addItems(["Hadron", "Quantum", "Neural", "Classic"])
+        overview_layout.addRow("Project Type:", self.type_combo)
+
+        overview_box.setLayout(overview_layout)
+        main_layout.addWidget(overview_box)
+
+        # === Section 2: Environment Setup ===
+        env_box = QGroupBox("⚙️ Environment Setup")
+        env_layout = QFormLayout()
+
+        # Save Directory
+        dir_row = QHBoxLayout()
         self.dir_input = QLineEdit()
         browse_button = QPushButton("Browse")
         browse_button.clicked.connect(self.browse_directory)
-        dir_layout.addWidget(self.dir_input)
-        dir_layout.addWidget(browse_button)
-        inner_layout.addLayout(dir_layout)
+        dir_row.addWidget(self.dir_input)
+        dir_row.addWidget(browse_button)
+        env_layout.addRow("Save Directory:", dir_row)
 
-        # === Entry Block ===
-        inner_layout.addWidget(QLabel("Entry Block (optional):"))
+        # Entry block
         self.entry_input = QLineEdit()
-        inner_layout.addWidget(self.entry_input)
+        env_layout.addRow("Entry Block (optional):", self.entry_input)
 
-        # === Runtime Target ===
-        inner_layout.addWidget(QLabel("Runtime Target:"))
+        # Runtime target
         self.runtime_combo = QComboBox()
         self.runtime_combo.addItems(["Local CPU", "Local GPU", "Remote (Cloud)", "Edge Device"])
-        inner_layout.addWidget(self.runtime_combo)
+        env_layout.addRow("Runtime Target:", self.runtime_combo)
 
-        # === Create Project Button ===
-        self.create_button = QPushButton("🚀 Create Project")
-        self.create_button.setStyleSheet("""
-            font-size: 14px;
-            color: black;
-            border: 2px solid black;
-            border-radius: 6px;
-            padding: 6px 12px;
-        """)
-        self.create_button.clicked.connect(self.create_project)
-        inner_layout.addWidget(self.create_button)
+        env_box.setLayout(env_layout)
+        main_layout.addWidget(env_box)
 
-        # Add frame to the main layout
-        outer_layout.addWidget(self.frame)
 
     def browse_directory(self):
         directory = QFileDialog.getExistingDirectory(self, "Select Directory")
@@ -79,6 +65,7 @@ class HadronProjectConfiguration(QWidget):
         path = self.dir_input.text().strip()
         entry = self.entry_input.text().strip()
         runtime = self.runtime_combo.currentText()
+        project_type = self.type_combo.currentText()
 
         if not name or not path:
             QMessageBox.warning(self, "Missing Info", "Please enter both project name and save directory.")
@@ -88,5 +75,6 @@ class HadronProjectConfiguration(QWidget):
             name=name,
             path=path,
             entry_block=entry,
-            runtime_target=runtime
+            runtime_target=runtime,
+            project_type=project_type
         )
