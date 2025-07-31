@@ -14,8 +14,6 @@ original_stderr = sys.stderr.write
 def run_block(window, canvas, block, context, code):
     all_blocks_by_id = {block.id: block for block in canvas.blocks}
 
-    
-
     # === Step 1: Gather input values
     inputs = {}
     for input_name, mapping in getattr(block, "input_mappings", {}).items():
@@ -30,32 +28,33 @@ def run_block(window, canvas, block, context, code):
             inputs[input_name] = None  # Fallback if missing
 
     print(inputs)
+
     # === Step 2: Prepare local execution context
     local_vars = {
         "inputs": SimpleNamespace(**inputs),
         "outputs": SimpleNamespace()
     }
 
-
     # === Step 3: Execute the block's code
     try:
         sys.stdout.write = window.redirector
         sys.stderr.write = window.redirector
 
-        exec(code)
-
-        sys.stdout.write = original_stdout
-        sys.stderr.write = original_stderr
-
+        exec(code, {}, local_vars)  # <-- FIXED
 
     except Exception as e:
         print(f"❌ Error in block [{block.name}]:", e)
 
+    finally:
+        sys.stdout.write = original_stdout
+        sys.stderr.write = original_stderr
+
+    # === Step 4: Copy outputs back into block
     if hasattr(local_vars["outputs"], "__dict__"):
-        print(local_vars["outputs"].__dict__.items())
         for key, value in local_vars["outputs"].__dict__.items():
             setattr(block.outputs, key, value)
-   
+        print(local_vars["outputs"].__dict__.items())
+
 
 def run_all_blocks(window, canvas):
     blocks = canvas.blocks
