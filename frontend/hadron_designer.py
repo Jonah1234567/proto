@@ -109,12 +109,8 @@ class HadronDesignerWindow(QMainWindow):
 
         self.toggle_terminal_action = toggle_terminal_action
 
-        self.output_box.setVisible(False)
-        self.toggle_terminal_action.setChecked(False)
-
-
-        
-
+        self.output_box.setVisible(self.controller.project.open_terminal)
+        self.toggle_terminal_action.setChecked(self.controller.project.open_terminal)
 
         try:
             with open("./frontend/styles.qss", "r") as f:
@@ -266,7 +262,10 @@ class HadronDesignerWindow(QMainWindow):
         return super().eventFilter(source, event)
     
     def toggle_terminal_visibility(self):
+        self.controller.project.open_terminal = not self.controller.project.open_terminal
         visible = self.output_box.isVisible()
         self.output_box.setVisible(not visible)
         self.toggle_terminal_action.setChecked(not visible)
+
+
 

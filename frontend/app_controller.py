@@ -78,7 +78,7 @@ class AppController(QMainWindow):
             return
 
         project_data = load_project(Path(path) / "project_settings.json")
-        self.project = Project(project_data['base_path'], project_data['project_type'])
+        self.project = Project(project_data['base_path'], project_data['project_type'], project_data['open_terminal'])
         
         self.editor_view = HadronDesignerWindow(self)
         self.stack.addWidget(self.editor_view)

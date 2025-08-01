@@ -3,10 +3,11 @@ import json
 
 
 class Project:
-    def __init__(self, base_path: str, project_type: str = "hadron"):
+    def __init__(self, base_path: str, project_type: str = "hadron", terminal_status=False):
         self.name = Path(base_path).name
         self.base_path = Path(base_path)
         self.project_type = project_type
+        self.open_terminal = terminal_status
 
         # Optionally create project folder
         self.base_path.mkdir(parents=True, exist_ok=True)
@@ -21,6 +22,7 @@ class Project:
             "name": self.name,
             "base_path": str(self.base_path),
             "project_type": self.project_type,
+            "open_terminal": self.open_terminal,
         }
 
     def save(self):
