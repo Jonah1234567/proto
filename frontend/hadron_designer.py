@@ -98,6 +98,24 @@ class HadronDesignerWindow(QMainWindow):
         content_row.addLayout(editor_area)
         main_layout.addLayout(content_row)
 
+                # === Utilities Menu ===
+        utilities_menu = menu_bar.addMenu("Utilities")
+
+        toggle_terminal_action = QAction("Toggle Terminal", self)
+        toggle_terminal_action.setCheckable(True)
+        toggle_terminal_action.setChecked(True)
+        toggle_terminal_action.triggered.connect(self.toggle_terminal_visibility)
+        utilities_menu.addAction(toggle_terminal_action)
+
+        self.toggle_terminal_action = toggle_terminal_action
+
+        self.output_box.setVisible(False)
+        self.toggle_terminal_action.setChecked(False)
+
+
+        
+
+
         try:
             with open("./frontend/styles.qss", "r") as f:
                 self.setStyleSheet(f.read())
@@ -246,3 +264,9 @@ class HadronDesignerWindow(QMainWindow):
                 self.add_block_menu.exec(self.add_block_button.mapToGlobal(event.position().toPoint()))
                 return True
         return super().eventFilter(source, event)
+    
+    def toggle_terminal_visibility(self):
+        visible = self.output_box.isVisible()
+        self.output_box.setVisible(not visible)
+        self.toggle_terminal_action.setChecked(not visible)
+
