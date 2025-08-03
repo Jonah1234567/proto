@@ -247,7 +247,7 @@ class HadronDesignerWindow(QMainWindow):
                 self.canvas.load_block_from_template_wrapper(template)
 
     def append_output(self, text):
-        self.output_box.moveCursor(self.output_box.textCursor().End)
+        self.output_box.moveCursor(QTextCursor.MoveOperation.End)
         self.output_box.insertPlainText(text)
 
     def redirector(self, inputStr):
