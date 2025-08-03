@@ -64,7 +64,7 @@ class HadronDesignerWindow(QMainWindow):
         self.tabs.currentChanged.connect(self.on_tab_changed)
         self.tabs.setStyleSheet("QTabBar::tab { color: black; }")
 
-        self.config_tab = HadronProjectConfiguration(controller=self, tab_widget=self.tabs)
+        self.config_tab = HadronProjectConfiguration(controller=self.controller, hadron_designer=self, tab_widget=self.tabs)
         self.tabs.addTab(self.config_tab, "🛠 Project Config")
         self.tabs.setCurrentWidget(self.config_tab)
 

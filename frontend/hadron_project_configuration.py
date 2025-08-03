@@ -11,11 +11,12 @@ import threading
 import requests
 from PyQt6.QtWidgets import QLineEdit, QCompleter, QMessageBox
 from PyQt6.QtCore import QTimer
+import json
 
 
 
 class HadronProjectConfiguration(QWidget):
-    def __init__(self, controller, tab_widget):
+    def __init__(self, controller, hadron_designer, tab_widget):
         super().__init__()
         self.controller = controller
         self.tab_widget = tab_widget
@@ -174,7 +175,7 @@ class HadronProjectConfiguration(QWidget):
             QMessageBox.warning(self, "Missing Info", "Please enter both project name and save directory.")
             return
 
-        self.controller.start_project(
+        self.hadron_designer.start_project(
             name=name,
             path=path,
             entry_block=entry,
@@ -182,18 +183,30 @@ class HadronProjectConfiguration(QWidget):
             project_type=project_type
         )
 
+        
     def populate_installed_packages(self):
+        print(self.controller)
+        print(self.controller.project.python_path)
         self.package_table.setRowCount(0)
         try:
-            packages = sorted(importlib.metadata.distributions(), key=lambda d: d.metadata['Name'].lower())
-            for dist in packages:
-                name = dist.metadata['Name']
-                version = dist.version
+            result = subprocess.run(
+                [self.controller.project.python_path, "-m", "pip", "list", "--format=json"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            print(result.stdout)
+            packages = json.loads(result.stdout)
+            for pkg in packages:
+                name = pkg['name']
+                version = pkg['version']
                 row = self.package_table.rowCount()
                 self.package_table.insertRow(row)
                 self.package_table.setItem(row, 0, QTableWidgetItem(name))
                 self.package_table.setItem(row, 1, QTableWidgetItem(version))
+
         except Exception as e:
+            print(e)
             self.package_table.setRowCount(1)
             self.package_table.setItem(0, 0, QTableWidgetItem("Error"))
             self.package_table.setItem(0, 1, QTableWidgetItem(str(e)))
@@ -218,7 +231,7 @@ class HadronProjectConfiguration(QWidget):
 
         def run_install():
             result = subprocess.run(
-                [sys.executable, "-m", "pip", "install", package],
+                [self.controller.project.python_path, "-m", "pip", "install", package],
                 capture_output=True, text=True
             )
 

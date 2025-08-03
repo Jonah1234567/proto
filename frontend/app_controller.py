@@ -38,7 +38,7 @@ class AppController(QMainWindow):
         if project_path == None:
             return
         
-        self.project = Project(project_path, project_type)
+        self.project = Project(project_path, project_type, gen_env=True)
 
         self.editor_view = HadronDesignerWindow(self)
         self.stack.addWidget(self.editor_view)
@@ -78,7 +78,7 @@ class AppController(QMainWindow):
             return
 
         project_data = load_project(Path(path) / "project_settings.json")
-        self.project = Project(project_data['base_path'], project_data['project_type'], project_data['open_terminal'])
+        self.project = Project(project_data['base_path'], project_data['project_type'], project_data['open_terminal'], gen_env=False, env_path=project_data['env_path'], pip_path=project_data['pip_path'], python_path=project_data['python_path'])
         
         self.editor_view = HadronDesignerWindow(self)
         self.stack.addWidget(self.editor_view)
