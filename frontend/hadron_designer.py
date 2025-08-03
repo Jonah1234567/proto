@@ -80,8 +80,19 @@ class HadronDesignerWindow(QMainWindow):
         self.bottom_row.setContentsMargins(0, 10, 10, 10)
         editor_area.addLayout(self.bottom_row)
 
-        # === Output Box ===
-        self.output_box = QTextEdit()
+        from PyQt6.QtWidgets import QFrame, QStackedLayout
+
+        # === Terminal Container with Overlay Button ===
+        terminal_container = QFrame()
+        terminal_container.setFixedHeight(150)
+        terminal_container.setStyleSheet("background-color: transparent;")
+
+        # Absolute layout for overlap
+        terminal_layout = QStackedLayout(terminal_container)
+        terminal_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Output Box
+        self.output_box = QTextEdit(terminal_container)
         self.output_box.setReadOnly(True)
         self.output_box.setStyleSheet("""
             QTextEdit {
@@ -91,9 +102,77 @@ class HadronDesignerWindow(QMainWindow):
                 border: 2px solid black;
                 border-radius: 6px;
             }
+            QScrollBar:vertical {
+                border: none;
+                background: #eee;
+                width: 10px;
+                margin: 0px 0px 0px 0px;
+                border-radius: 5px;
+            }
+            QScrollBar::handle:vertical {
+                background: #888;
+                min-height: 20px;
+                border-radius: 5px;
+            }
+            QScrollBar::add-line:vertical,
+            QScrollBar::sub-line:vertical {
+                height: 0px;
+                subcontrol-origin: margin;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: none;
+            }
+
+            QScrollBar:horizontal {
+                border: none;
+                background: #eee;
+                height: 10px;
+                margin: 0px 0px 0px 0px;
+                border-radius: 5px;
+            }
+            QScrollBar::handle:horizontal {
+                background: #888;
+                min-width: 20px;
+                border-radius: 5px;
+            }
+            QScrollBar::add-line:horizontal,
+            QScrollBar::sub-line:horizontal {
+                width: 0px;
+                subcontrol-origin: margin;
+            }
+            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+                background: none;
+            }
         """)
-        self.output_box.setFixedHeight(150)
-        editor_area.addWidget(self.output_box)
+        terminal_layout.addWidget(self.output_box)
+
+
+        # Clear Button
+        self.clear_button = QPushButton("🧹 Clear", terminal_container)
+        self.clear_button.setStyleSheet("""
+            QPushButton {
+                background-color: white;
+                color: black;
+                border: 1px solid black;
+                border-radius: 4px;
+                font-size: 11px;
+                padding: 2px 6px;
+            }
+        """)
+        self.clear_button.setFixedSize(60, 24)
+        self.clear_button.clicked.connect(self.clear_output_box)
+
+        def reposition_clear_button():
+            self.clear_button.move(terminal_container.width() - 72, 5)
+
+        terminal_container.resizeEvent = lambda event: reposition_clear_button()
+        reposition_clear_button()  # run once initially
+
+
+        # Add terminal to layout
+        editor_area.addWidget(terminal_container)
+
+
 
         content_row.addLayout(editor_area)
         main_layout.addLayout(content_row)
@@ -182,6 +261,8 @@ class HadronDesignerWindow(QMainWindow):
         # === Manually trigger tab change logic to update button connections ===
         self.on_tab_changed(self.tabs.currentIndex())
 
+    def clear_output_box(self):
+        self.output_box.clear()
 
     def run_blocks(self):
         print("▶ Executing all blocks...")
@@ -265,7 +346,9 @@ class HadronDesignerWindow(QMainWindow):
         self.controller.project.open_terminal = not self.controller.project.open_terminal
         visible = self.output_box.isVisible()
         self.output_box.setVisible(not visible)
+        self.clear_button.setVisible(not visible)  # Add this line
         self.toggle_terminal_action.setChecked(not visible)
+
 
 
 
