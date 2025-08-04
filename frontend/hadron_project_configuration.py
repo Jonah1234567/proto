@@ -12,6 +12,8 @@ import requests
 from PyQt6.QtWidgets import QLineEdit, QCompleter, QMessageBox
 from PyQt6.QtCore import QTimer
 import json
+from PyQt6.QtWidgets import QMenu
+
 
 
 
@@ -157,6 +159,10 @@ class HadronProjectConfiguration(QWidget):
         self.package_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.package_search.setCompleter(self.package_completer)
 
+        self.package_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.package_table.customContextMenuRequested.connect(self.show_context_menu)
+
+
 
 
     def browse_directory(self):
@@ -227,12 +233,34 @@ class HadronProjectConfiguration(QWidget):
             QMessageBox.warning(self, "Missing Package", "Please enter a package name.")
             return
 
+        # Check if package is already installed
+        installed_version = None
+        for row in range(self.package_table.rowCount()):
+            item = self.package_table.item(row, 0)
+            if item and item.text().lower() == name.lower():
+                installed_version = self.package_table.item(row, 1).text()
+                break
+
+        if installed_version:
+            if not version or version == installed_version:
+                QMessageBox.information(self, "Already Installed",
+                    f"'{name}' is already installed with version {installed_version}. Skipping.")
+                return
+            else:
+                msg = f"'{name}' is installed with version {installed_version}. Reinstall with version {version}?"
+                confirm = QMessageBox.question(self, "Reinstall?", msg,
+                                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                if confirm != QMessageBox.StandardButton.Yes:
+                    return
+
+        # Compose package string
         package = f"{name}=={version}" if version else name
 
         def run_install():
             result = subprocess.run(
-                [self.controller.project.python_path, "-m", "pip", "install", package],
-                capture_output=True, text=True
+                [self.controller.project.python_path, "-m", "pip", "install", "--upgrade", package],
+                capture_output=True,
+                text=True
             )
 
             def handle_result():
@@ -245,6 +273,7 @@ class HadronProjectConfiguration(QWidget):
             QTimer.singleShot(0, handle_result)
 
         threading.Thread(target=run_install).start()
+
 
 
     def update_package_completions(self):
@@ -263,6 +292,50 @@ class HadronProjectConfiguration(QWidget):
                 pass
 
         threading.Thread(target=fetch).start()
+    
+    
+    def show_context_menu(self, position):
+        index = self.package_table.indexAt(position)
+        if not index.isValid():
+            return
+
+        row = index.row()
+        package_name = self.package_table.item(row, 0).text()
+
+        menu = QMenu()
+        uninstall_action = menu.addAction(f"❌ Uninstall '{package_name}'")
+        action = menu.exec(self.package_table.viewport().mapToGlobal(position))
+
+        if action == uninstall_action:
+            self.uninstall_package(package_name)
+
+    def uninstall_package(self, package_name):
+        confirm = QMessageBox.question(
+            self,
+            "Confirm Uninstall",
+            f"Are you sure you want to uninstall '{package_name}'?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if confirm == QMessageBox.StandardButton.Yes:
+            def run_uninstall():
+                result = subprocess.run(
+                    [self.controller.project.python_path, "-m", "pip", "uninstall", "-y", package_name],
+                    capture_output=True,
+                    text=True
+                )
+
+                def handle_result():
+                    if result.returncode == 0:
+                        QMessageBox.information(self, "Uninstalled", f"Successfully uninstalled: {package_name}")
+                    else:
+                        QMessageBox.critical(self, "Error", f"Failed to uninstall:\n{result.stderr}")
+                    self.populate_installed_packages()
+
+                QTimer.singleShot(0, handle_result)
+
+            threading.Thread(target=run_uninstall).start()
+
 
 
 
