@@ -163,8 +163,6 @@ class HadronProjectConfiguration(QWidget):
         self.package_table.customContextMenuRequested.connect(self.show_context_menu)
 
 
-
-
     def browse_directory(self):
         directory = QFileDialog.getExistingDirectory(self, "Select Directory")
         if directory:
@@ -226,7 +224,7 @@ class HadronProjectConfiguration(QWidget):
             self.package_table.setRowHidden(row, text not in row_text)
 
     def install_package(self):
-        name = self.package_search.text().strip()
+        name = self.package_search .text().strip()
         version = self.version_input.text().strip()
 
         if not name:
@@ -335,8 +333,4 @@ class HadronProjectConfiguration(QWidget):
                 QTimer.singleShot(0, handle_result)
 
             threading.Thread(target=run_uninstall).start()
-
-
-
-
 

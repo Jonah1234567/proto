@@ -1,6 +1,8 @@
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QGraphicsObject
 from PyQt6.QtGui import QPainter, QColor, QWheelEvent, QPen
 from PyQt6.QtCore import Qt, QPointF
+from PyQt6.QtCore import pyqtSignal
+
 
 from connection import Connection
 from connection import ConnectionLine
@@ -17,9 +19,11 @@ from frontend.block import Block
 
 
 class Canvas(QGraphicsView):
+    modified = pyqtSignal()
     def __init__(self, tab_widget):
         super().__init__()
-
+        self.filepath= None
+        
         self.tab_widget = tab_widget
         self.blocks = []
         self.connections = []  # 🔗 Keep track of all connections
@@ -82,6 +86,8 @@ class Canvas(QGraphicsView):
         if event.button() == Qt.MouseButton.LeftButton:
             
             if isinstance(item, QGraphicsEllipseItem):
+                self.modified.emit()
+
                 parent = get_block_from_item(item)
                 tooltip = item.toolTip()
                 print(tooltip)
@@ -99,6 +105,8 @@ class Canvas(QGraphicsView):
                         print("⚠️ Clicked input with no connection started")
 
             else:
+                self.modified.emit()
+
                 block = get_block_from_item(item)
                 if block and self.connection_start and block != self.connection_start:
                     print("✅ Completing connection via block body — autosnap to input port")
@@ -150,6 +158,8 @@ class Canvas(QGraphicsView):
             super().mouseReleaseEvent(event)
 
     def add_block(self, name=""):
+        self.modified.emit()
+
         print("hiii")
         if name == "":
             name = f"Block {len(self.blocks) + 1}"
@@ -160,6 +170,8 @@ class Canvas(QGraphicsView):
         self.blocks.append(block)
 
     def add_variable_block(self):
+        self.modified.emit()
+
         name = f"Variable Block {len(self.blocks) + 1}"
         block = Block(name, self.tab_widget, background_color="#ffeaa7")
         block.block_type = "variable"
@@ -168,6 +180,8 @@ class Canvas(QGraphicsView):
         self.blocks.append(block)
 
     def add_conditional_block(self):
+        self.modified.emit()
+
         name = f"Conditonal Block {len(self.blocks) + 1}"
         block = Block(name, self.tab_widget, background_color="#fab1a0")
         block.block_type = "conditional"
@@ -176,6 +190,8 @@ class Canvas(QGraphicsView):
         self.blocks.append(block)
 
     def add_loop_block(self):
+        self.modified.emit()
+
         name = f"Loop Block {len(self.blocks) + 1}"
         block = Block(name, self.tab_widget, background_color="#55efc4")
         block.block_type = "loop"
@@ -184,6 +200,8 @@ class Canvas(QGraphicsView):
         self.blocks.append(block)
 
     def add_start_block(self):
+        self.modified.emit()
+
         name = f"Start Block"
         block = Block(name, self.tab_widget)
         block.setPos(50 + len(self.blocks) * 20, 100)
@@ -193,6 +211,8 @@ class Canvas(QGraphicsView):
 
 
     def create_connection(self, start_block, end_block):
+        self.modified.emit()
+
         print(start_block, end_block)
         for conn in self.connections:
             if conn.start_block == start_block and conn.end_block == end_block:

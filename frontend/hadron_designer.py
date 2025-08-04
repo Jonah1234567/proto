@@ -9,6 +9,7 @@ from canvas import Canvas
 from block_library_dialog import BlockLibraryDialog
 from hadron_project_configuration import HadronProjectConfiguration
 from components.file_sidebar import FileSidebar
+from PyQt6.QtGui import QShortcut, QKeySequence
 
 import sys
 from pathlib import Path
@@ -161,6 +162,7 @@ class HadronDesignerWindow(QMainWindow):
         """)
         self.clear_button.setFixedSize(60, 24)
         self.clear_button.clicked.connect(self.clear_output_box)
+        
 
         def reposition_clear_button():
             self.clear_button.move(terminal_container.width() - 72, 5)
@@ -190,6 +192,9 @@ class HadronDesignerWindow(QMainWindow):
 
         self.output_box.setVisible(self.controller.project.open_terminal)
         self.toggle_terminal_action.setChecked(self.controller.project.open_terminal)
+
+        save_shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
+        save_shortcut.activated.connect(self.save_current_tab)
 
         try:
             with open("./frontend/styles.qss", "r") as f:
@@ -247,9 +252,12 @@ class HadronDesignerWindow(QMainWindow):
     def open_quark_file(self, filepath):
         file_name = Path(filepath).name
         canvas, tab_widget = self.create_canvas(True)
+        canvas.filepath = filepath
 
         # Load content into canvas
         canvas.load_layout(filepath)
+        canvas.modified.connect(lambda: self.mark_canvas_tab_modified(canvas))
+
 
         # Track the canvas for the tab
         self.canvas_tabs[tab_widget] = canvas
@@ -348,6 +356,44 @@ class HadronDesignerWindow(QMainWindow):
         self.output_box.setVisible(not visible)
         self.clear_button.setVisible(not visible)  # Add this line
         self.toggle_terminal_action.setChecked(not visible)
+
+    def mark_canvas_tab_modified(self, canvas):
+        for tab, tracked_canvas in self.canvas_tabs.items():
+            if tracked_canvas == canvas:
+                index = self.tabs.indexOf(tab)
+                current_text = self.tabs.tabText(index)
+                if not current_text.endswith("*"):
+                    self.tabs.setTabText(index, current_text + " *")
+                break
+    
+    def save_current_tab(self):
+        current_tab = self.tabs.currentWidget()
+        canvas = self.canvas_tabs.get(current_tab)
+
+        if not canvas:
+            print("❌ No canvas found for current tab.")
+            return
+
+        # Optionally store a filename on canvas object
+        if hasattr(canvas, "filepath") and canvas.filepath:
+            canvas.save_layout(canvas.filepath)
+            print(f"✅ Saved to {canvas.filepath}")
+        else:
+            from PyQt6.QtWidgets import QFileDialog
+            path, _ = QFileDialog.getSaveFileName(self, "Save Canvas Layout", "", "Quark Files (*.quark)")
+            if path:
+                canvas.filepath = path
+                canvas.save_layout(path)
+                print(f"💾 Saved as new file: {path}")
+                
+         # Remove asterisk from the tab title if it exists
+        tab_index = self.tabs.indexOf(current_tab)
+        current_label = self.tabs.tabText(tab_index)
+        if current_label.endswith("*"):
+            self.tabs.setTabText(tab_index, current_label[:-1])
+
+
+
 
 
 
