@@ -190,8 +190,11 @@ class HadronDesignerWindow(QMainWindow):
 
         self.toggle_terminal_action = toggle_terminal_action
 
-        self.output_box.setVisible(self.controller.project.open_terminal)
-        self.toggle_terminal_action.setChecked(self.controller.project.open_terminal)
+        terminal_visible = self.controller.project.open_terminal
+        self.output_box.setVisible(terminal_visible)
+        self.clear_button.setVisible(terminal_visible)
+        self.toggle_terminal_action.setChecked(terminal_visible)
+
 
         save_shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
         save_shortcut.activated.connect(self.save_current_tab)
@@ -404,6 +407,7 @@ class HadronDesignerWindow(QMainWindow):
         # === Remove asterisk from the tab title
         tab_index = self.tabs.indexOf(current_tab)
         current_label = self.tabs.tabText(tab_index)
+        self.controller.project.save()
         if current_label.endswith("*"):
             self.tabs.setTabText(tab_index, current_label[:-1])
 
