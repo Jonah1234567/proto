@@ -24,6 +24,8 @@ class HadronDesignerWindow(QMainWindow):
         super().__init__()
         self.controller = controller
         self.canvas_tabs = {}
+        self.open_file_tabs = {}  # maps file paths to tab widgets
+
 
         # === Menu Bar ===
         menu_bar = self.menuBar()
@@ -253,6 +255,15 @@ class HadronDesignerWindow(QMainWindow):
         return canvas, canvas_tab
 
     def open_quark_file(self, filepath):
+        filepath = str(Path(filepath).resolve())  # normalize path
+
+        # ✅ Check if this file is already open
+        if filepath in self.open_file_tabs:
+            existing_tab = self.open_file_tabs[filepath]
+            self.tabs.setCurrentWidget(existing_tab)
+            print(f"📄 File already open: {filepath}")
+            return
+
         file_name = Path(filepath).name
         canvas, tab_widget = self.create_canvas(True)
         canvas.filepath = filepath
@@ -261,16 +272,17 @@ class HadronDesignerWindow(QMainWindow):
         canvas.load_layout(filepath)
         canvas.modified.connect(lambda: self.mark_canvas_tab_modified(canvas))
 
-
-        # Track the canvas for the tab
+        # Track the canvas and file → tab mapping
         self.canvas_tabs[tab_widget] = canvas
+        self.open_file_tabs[filepath] = tab_widget
 
         # Add tab and switch to it
         self.tabs.addTab(tab_widget, f"📄 {file_name}")
         self.tabs.setCurrentWidget(tab_widget)
 
-        # === Manually trigger tab change logic to update button connections ===
+        # Manually trigger tab change logic to update button connections
         self.on_tab_changed(self.tabs.currentIndex())
+
 
     def clear_output_box(self):
         self.output_box.clear()
