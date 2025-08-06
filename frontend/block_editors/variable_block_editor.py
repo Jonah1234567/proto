@@ -3,6 +3,8 @@ from PyQt6.QtWidgets import (
     QPushButton, QListWidget, QListWidgetItem, QHBoxLayout, QInputDialog, QComboBox
 )
 from PyQt6.QtGui import QTextCursor
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QShortcut, QKeySequence
 import re
 from io_mapper import IOMapperDialog
 
@@ -14,6 +16,9 @@ from backend.outputs_proxy import OutputsProxy
 from backend.saving import save_to_template
 
 class VariableBlockEditor(QWidget):
+    modified = pyqtSignal()
+    saved = pyqtSignal()
+
     def __init__(self, block, tab_widget):
         super().__init__()
         self.block = block
@@ -23,6 +28,7 @@ class VariableBlockEditor(QWidget):
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(QLabel("Block Name:"))
         self.name_input = QLineEdit(block.name)
+        self.name_input.textChanged.connect(self.modified.emit)
         self.layout.addWidget(self.name_input)
 
         # =================== Variable Definition Section ===================
@@ -95,6 +101,11 @@ class VariableBlockEditor(QWidget):
                 value_input.setStyleSheet("border: 2px solid red;")
                 value_input.setToolTip(f"Invalid {typ} value")
 
+        # === Connect change events to emit modified ===
+        name_input.textChanged.connect(self.modified.emit)
+        value_input.textChanged.connect(self.modified.emit)
+        type_dropdown.currentTextChanged.connect(self.modified.emit)
+
         # Connect triggers
         value_input.editingFinished.connect(validate_value)
         type_dropdown.currentTextChanged.connect(validate_value)
@@ -113,6 +124,7 @@ class VariableBlockEditor(QWidget):
 
         # Run initial validation
         validate_value()
+        self.modified.emit()
 
     def remove_variable_row(self, container):
         for i, (row, *_rest) in enumerate(self.variable_definitions):
@@ -122,6 +134,7 @@ class VariableBlockEditor(QWidget):
                 self.variable_definitions.pop(i)
                 break
         self.update_generated_code()
+        self.modified.emit()
 
     def update_generated_code(self):
         if self.show_code_checkbox.isChecked():
@@ -171,6 +184,8 @@ class VariableBlockEditor(QWidget):
 
         # Redraw block
         self.block.update()
+        print(f"💾 Saved block '{self.block.name}'")
+        self.saved.emit()
 
     def load_from_block(self):
         code = self.block.code.strip()

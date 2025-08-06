@@ -2,11 +2,16 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QLineEdit, QTextEdit,
     QPushButton, QListWidget, QListWidgetItem, QInputDialog, QMessageBox
 )
+from PyQt6.QtCore import pyqtSignal
 import re
 from io_mapper import IOMapperDialog 
 
 import sys
 from pathlib import Path
+from PyQt6.QtGui import QShortcut, QKeySequence
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication
+
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 
@@ -15,6 +20,8 @@ from backend.outputs_proxy import OutputsProxy
 from backend.saving import save_to_template
 
 class BlockEditor(QWidget):
+    modified = pyqtSignal()
+    saved = pyqtSignal()
     def __init__(self, block, tab_widget):
         super().__init__()
         self.block = block
@@ -25,11 +32,13 @@ class BlockEditor(QWidget):
 
         self.layout.addWidget(QLabel("Block Name:"))
         self.name_input = QLineEdit(block.name)
+        self.name_input.textChanged.connect(self.modified.emit)
         self.layout.addWidget(self.name_input)
 
         self.layout.addWidget(QLabel("Code:"))
         self.code_input = QTextEdit()
         self.code_input.setPlainText(block.code)  # preserves newlines and tabs
+        self.code_input.textChanged.connect(self.modified.emit)
         self.layout.addWidget(self.code_input)
 
         self.layout.addWidget(QLabel("Inputs:"))
@@ -101,12 +110,16 @@ class BlockEditor(QWidget):
         self.layout.addWidget(after_list)
 
 
+
+
     def add_input(self):
+        self.modified.emit()
         text, ok = QInputDialog.getText(self, "New Input", "Input name:")
         if ok and text:
             self.input_list.addItem(QListWidgetItem(text))
 
     def add_output(self):
+        self.modified.emit()
         text, ok = QInputDialog.getText(self, "New Output", "Output name:")
         if ok and text:
             self.output_list.addItem(QListWidgetItem(text))
@@ -143,6 +156,8 @@ class BlockEditor(QWidget):
         self.block.inputs.set_names(inputs)
         self.block.outputs.set_names(outputs)
         self.block.update()
+        print(f"💾 Saved block '{self.block.name}'")
+        self.saved.emit()
 
 
     def open_io_mapper(self):
@@ -154,6 +169,7 @@ class BlockEditor(QWidget):
         print("✅ IOMapperDialog closed successfully.")
 
     def auto_connect_matching_io(self):
+        self.modified.emit()
         if not hasattr(self.block, "input_mappings"):
             self.block.input_mappings = {}
 
@@ -191,3 +207,6 @@ class BlockEditor(QWidget):
         else:
             QMessageBox.information(self, "Auto-Connect", "Auto-connection completed successfully.")
 
+    def _maybe_save_changes(self):
+        if self.tab_widget.currentWidget() is self:
+            self.save_changes()

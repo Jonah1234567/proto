@@ -9,7 +9,7 @@ from backend.outputs_proxy import OutputsProxy
 from frontend.block import Block
 from frontend.connection import Connection
 
-def load_file(self, filename):
+def load_file(self, filename, controller):
     print("fire")
     with open(filename, "r") as f:
         contents = f.read()
@@ -30,7 +30,7 @@ def load_file(self, filename):
     # Recreate blocks
     id_to_block = {}
     for block_data in data["blocks"]:
-        block = Block(block_data["name"], self.tab_widget)
+        block = Block(block_data["name"], self.tab_widget, controller=controller)
         block.block_type = block_data["block_type"]
         block.id = block_data["id"]
         block.background_color = block_data["background_color"]
@@ -54,7 +54,7 @@ def load_file(self, filename):
             conn = Connection(start, end, self.scene)
             self.connections.append(conn)
 
-def load_block_from_template(self, template):
+def load_block_from_template(self, template, controller):
     name = template.get("name", "Unnamed Block")
     code = template.get("code", "")
     block_type = template.get("block_type", "code")
@@ -66,7 +66,7 @@ def load_block_from_template(self, template):
     outputs.from_dict(template.get("outputs", {}))
     input_mappings = template.get("input_mappings", {})
 
-    block = Block(name, self.tab_widget, background_color)
+    block = Block(name, self.tab_widget, background_color, controller=controller)
     block.block_type = block_type
     block.code = code
     block.inputs = inputs

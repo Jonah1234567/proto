@@ -20,11 +20,12 @@ from frontend.block import Block
 
 class Canvas(QGraphicsView):
     modified = pyqtSignal()
-    def __init__(self, tab_widget):
+    def __init__(self, tab_widget, controller):
         super().__init__()
         self.filepath= None
         
         self.tab_widget = tab_widget
+        self.controller = controller
         self.blocks = []
         self.connections = []  # 🔗 Keep track of all connections
 
@@ -164,7 +165,7 @@ class Canvas(QGraphicsView):
         if name == "":
             name = f"Block {len(self.blocks) + 1}"
         print(name)
-        block = Block(name, self.tab_widget, background_color="#74b9ff")
+        block = Block(name, self.tab_widget, background_color="#74b9ff", controller=self.controller)
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
         self.blocks.append(block)
@@ -173,7 +174,7 @@ class Canvas(QGraphicsView):
         self.modified.emit()
 
         name = f"Variable Block {len(self.blocks) + 1}"
-        block = Block(name, self.tab_widget, background_color="#ffeaa7")
+        block = Block(name, self.tab_widget, background_color="#ffeaa7", controller=self.controller)
         block.block_type = "variable"
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
@@ -183,7 +184,7 @@ class Canvas(QGraphicsView):
         self.modified.emit()
 
         name = f"Conditonal Block {len(self.blocks) + 1}"
-        block = Block(name, self.tab_widget, background_color="#fab1a0")
+        block = Block(name, self.tab_widget, background_color="#fab1a0", controller=self.controller)
         block.block_type = "conditional"
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
@@ -193,7 +194,7 @@ class Canvas(QGraphicsView):
         self.modified.emit()
 
         name = f"Loop Block {len(self.blocks) + 1}"
-        block = Block(name, self.tab_widget, background_color="#55efc4")
+        block = Block(name, self.tab_widget, background_color="#55efc4", controller=self.controller)
         block.block_type = "loop"
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
@@ -203,7 +204,7 @@ class Canvas(QGraphicsView):
         self.modified.emit()
 
         name = f"Start Block"
-        block = Block(name, self.tab_widget)
+        block = Block(name, self.tab_widget, controller=self.controller)
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
         self.blocks.append(block)
@@ -236,7 +237,7 @@ class Canvas(QGraphicsView):
         save_file(self, filename)
         
     def load_layout(self, filename):
-        load_file(self, filename)
+        load_file(self, filename, self.controller)
     
     def load_block_from_template_wrapper(self, template):
         block = load_block_from_template(self, template)

@@ -2,15 +2,19 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QLineEdit, QTextEdit,
     QPushButton, QHBoxLayout, QComboBox, QMessageBox
 )
+from PyQt6.QtCore import pyqtSignal
 import re
 from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
 import sys
 from pathlib import Path
+from PyQt6.QtGui import QShortcut, QKeySequence
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 from backend.saving import save_to_template
 
 class LoopBlockEditor(QWidget):
+    modified = pyqtSignal()
+    saved = pyqtSignal()
     def __init__(self, block, tab_widget):
         super().__init__()
         self.block = block
@@ -20,6 +24,7 @@ class LoopBlockEditor(QWidget):
 
         self.layout.addWidget(QLabel("Block Name:"))
         self.name_input = QLineEdit(block.name)
+        self.name_input.textChanged.connect(self.modified.emit)
         self.layout.addWidget(self.name_input)
 
         self.layout.addWidget(QLabel("Loop Condition and Type:"))
@@ -27,6 +32,7 @@ class LoopBlockEditor(QWidget):
         # ========== Loop Condition Row ==========
         loop_row = QHBoxLayout()
         self.condition_input = QLineEdit()
+        self.condition_input.textChanged.connect(self.modified.emit)
         self.condition_input.setPlaceholderText("e.g., i in range(5), item in items, x < 10")
         loop_row.addWidget(self.condition_input)
 
@@ -36,6 +42,8 @@ class LoopBlockEditor(QWidget):
             "for item in collection", 
             "while condition"
         ])
+
+        self.loop_type_selector.currentTextChanged.connect(self.modified.emit)
         loop_row.addWidget(self.loop_type_selector)
 
         self.layout.addLayout(loop_row)
@@ -44,6 +52,8 @@ class LoopBlockEditor(QWidget):
         self.layout.addWidget(QLabel("Loop Body Code:"))
         self.code_input = QTextEdit()
         self.layout.addWidget(self.code_input)
+        self.code_input.textChanged.connect(self.modified.emit)
+
 
         # ========== Buttons ==========
         self.save_button = QPushButton("💾 Save and Show Generated Code")
@@ -67,6 +77,7 @@ class LoopBlockEditor(QWidget):
 
         # === Load existing code ===
         self.load_from_block()
+
 
     def generate_loop_code(self):
         loop_type = self.loop_type_selector.currentText()
@@ -119,6 +130,8 @@ class LoopBlockEditor(QWidget):
         self.block.inputs.set_names(inputs)
         self.block.outputs.set_names(outputs)
         self.block.update()
+        print(f"💾 Saved block '{self.block.name}'")
+        self.saved.emit()
 
     def load_from_block(self):
         code = self.block.code.strip()

@@ -19,9 +19,9 @@ from backend.outputs_proxy import OutputsProxy
 from backend.saving import save_to_template
 
 class Block(QGraphicsObject):
-    def __init__(self, name, tab_widget, background_color="#74b9ff"):
+    def __init__(self, name, tab_widget, background_color="#74b9ff", controller=None):
         super().__init__()
-        
+        self.controller=controller
         self.id = str(uuid.uuid4())  # assign unique ID
 
         
@@ -163,6 +163,10 @@ class Block(QGraphicsObject):
             print(f"❌ Unknown block type: {self.block_type!r}")
             return  # or raise an error
 
+        editor.modified.connect(lambda: self.mark_tab_modified_for(editor))
+        editor.saved.connect(lambda: self.clear_modified_flag(editor))
+
+
         self.tab_widget.addTab(editor, self.name)
         self.tab_widget.setCurrentWidget(editor)
 
@@ -210,6 +214,22 @@ class Block(QGraphicsObject):
         path = QPainterPath()
         path.addRoundedRect(0, 0, self.width, self.height, 10, 10)
         return path
+
+    def mark_tab_modified_for(self, editor):
+        tab_widget = self.tab_widget  # <-- use the QTabWidget reference you already have
+        index = tab_widget.indexOf(editor)
+        if index != -1:
+            label = tab_widget.tabText(index)
+            if not label.endswith("*"):
+                tab_widget.setTabText(index, label + "*")
+    def clear_modified_flag(self, editor):
+        index = self.tab_widget.indexOf(editor)
+        if index != -1:
+            label = self.tab_widget.tabText(index)
+            if label.endswith("*"):
+                self.tab_widget.setTabText(index, label[:-1])
+
+
 
 
 

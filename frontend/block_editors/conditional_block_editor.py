@@ -7,10 +7,14 @@ from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
 import sys
 from pathlib import Path
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QShortcut, QKeySequence
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 from backend.saving import save_to_template
 
 class ConditionalBlockEditor(QWidget):
+    modified = pyqtSignal()
+    saved = pyqtSignal()
     def __init__(self, block, tab_widget):
         super().__init__()
         self.block = block
@@ -20,6 +24,7 @@ class ConditionalBlockEditor(QWidget):
 
         self.layout.addWidget(QLabel("Block Name:"))
         self.name_input = QLineEdit(block.name)
+        self.name_input.textChanged.connect(self.modified.emit)
         self.layout.addWidget(self.name_input)
 
         self.layout.addWidget(QLabel("Conditional Logic:"))
@@ -49,6 +54,7 @@ class ConditionalBlockEditor(QWidget):
         # Add Else block
         self.else_label = QLabel("else:")
         self.else_code = QTextEdit()
+        self.else_code.textChanged.connect(self.modified.emit)
         self.condition_block_layout.addWidget(self.else_label)
         self.condition_block_layout.addWidget(self.else_code)
 
@@ -69,8 +75,10 @@ class ConditionalBlockEditor(QWidget):
 
         label = QLabel(f"{block_type} condition:")
         condition_input = QLineEdit(condition)
+        condition_input.textChanged.connect(self.modified.emit)
         code_input = QTextEdit()
         code_input.setPlainText(code)
+        code_input.textChanged.connect(self.modified.emit)
 
         row_layout.addWidget(label)
         row_layout.addWidget(condition_input)
@@ -86,6 +94,7 @@ class ConditionalBlockEditor(QWidget):
             "code_input": code_input,
             "widget": block_widget
         })
+        self.modified.emit()
 
     def save_changes(self):
         self.block.name = self.name_input.text()
@@ -128,6 +137,8 @@ class ConditionalBlockEditor(QWidget):
         self.block.inputs.set_names(inputs)
         self.block.outputs.set_names(outputs)
         self.block.update()
+        print(f"💾 Saved block '{self.block.name}'")
+        self.saved.emit()
 
     def load_from_block(self):
         code = self.block.code.strip()

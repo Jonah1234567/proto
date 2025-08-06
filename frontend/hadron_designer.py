@@ -203,7 +203,7 @@ class HadronDesignerWindow(QMainWindow):
             print("Could not load stylesheet:", e)
 
     def create_canvas(self, set_as_main=False):
-        canvas = Canvas(self.tabs)
+        canvas = Canvas(self.tabs, self.controller)
         canvas_tab = QWidget()
         layout = QVBoxLayout(canvas_tab)
         layout.addWidget(canvas)
@@ -365,32 +365,48 @@ class HadronDesignerWindow(QMainWindow):
                 if not current_text.endswith("*"):
                     self.tabs.setTabText(index, current_text + " *")
                 break
+
+    
     
     def save_current_tab(self):
         current_tab = self.tabs.currentWidget()
-        canvas = self.canvas_tabs.get(current_tab)
+        print(f"🔍 Current tab widget: {current_tab}")
 
-        if not canvas:
-            print("❌ No canvas found for current tab.")
+        # === Case 1: Canvas Tab ===
+        canvas = self.canvas_tabs.get(current_tab)
+        if canvas:
+            if hasattr(canvas, "filepath") and canvas.filepath:
+                canvas.save_layout(canvas.filepath)
+                print(f"✅ Saved to {canvas.filepath}")
+            else:
+                from PyQt6.QtWidgets import QFileDialog
+                path, _ = QFileDialog.getSaveFileName(
+                    self, "Save Canvas Layout", "", "Quark Files (*.quark)"
+                )
+                if path:
+                    canvas.filepath = path
+                    canvas.save_layout(path)
+                    print(f"💾 Saved as new file: {path}")
+
+        # === Case 2: Block Editor Tab (any tab with save_changes method)
+        elif hasattr(current_tab, "save_changes") and callable(current_tab.save_changes):
+            try:
+                current_tab.save_changes()
+                print("💾 Saved block editor tab.")
+            except Exception as e:
+                print(f"❌ Error saving block editor tab: {e}")
+
+        # === Unknown Tab Type
+        else:
+            print("❌ Unrecognized tab type. Nothing was saved.")
             return
 
-        # Optionally store a filename on canvas object
-        if hasattr(canvas, "filepath") and canvas.filepath:
-            canvas.save_layout(canvas.filepath)
-            print(f"✅ Saved to {canvas.filepath}")
-        else:
-            from PyQt6.QtWidgets import QFileDialog
-            path, _ = QFileDialog.getSaveFileName(self, "Save Canvas Layout", "", "Quark Files (*.quark)")
-            if path:
-                canvas.filepath = path
-                canvas.save_layout(path)
-                print(f"💾 Saved as new file: {path}")
-                
-         # Remove asterisk from the tab title if it exists
+        # === Remove asterisk from the tab title
         tab_index = self.tabs.indexOf(current_tab)
         current_label = self.tabs.tabText(tab_index)
         if current_label.endswith("*"):
             self.tabs.setTabText(tab_index, current_label[:-1])
+
 
 
 
