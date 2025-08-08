@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QMainWindow, QTabWidget, QMenuBar, QMenu, QFileDialog, QTextEdit
+    QMainWindow, QTabWidget, QMenuBar, QMenu, QFileDialog, QTextEdit, QMessageBox
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QTextCursor, QAction
@@ -311,17 +311,78 @@ class HadronDesignerWindow(QMainWindow):
         if path:
             self.canvas.load_layout(path)
 
+
     def close_tab(self, index):
         widget = self.tabs.widget(index)
 
-        # Remove from canvas_tabs if it's a canvas tab
-        if widget in self.canvas_tabs:
-            canvas = self.canvas_tabs.pop(widget)
+        # Check if this is a canvas tab and has unsaved changes
+        canvas = self.canvas_tabs.get(widget)
+        if canvas:
+            current_text = self.tabs.tabText(index)
+            if current_text.endswith("*"):
+                msg_box = QMessageBox(self)
+                msg_box.setWindowTitle("Unsaved Changes")
+                msg_box.setText(f"Do you want to save changes to '{current_text[:-2]}'?")
+                msg_box.setIcon(QMessageBox.Icon.Question)
+                msg_box.setStandardButtons(
+                    QMessageBox.StandardButton.Save |
+                    QMessageBox.StandardButton.Discard |
+                    QMessageBox.StandardButton.Cancel
+                )
+                msg_box.setDefaultButton(QMessageBox.StandardButton.Save)
+                msg_box.setStyleSheet("""
+                    QMessageBox {
+                        color: black;
+                        font-size: 14px;
+                    }
+                    QPushButton {
+                        color: black;
+                    }
+                """)
+                response = msg_box.exec()
 
-            # Also remove from open_file_tabs using the resolved file path
+                if response == QMessageBox.StandardButton.Save:
+                    self.tabs.setCurrentIndex(index)
+                    self.save_current_tab()
+                elif response == QMessageBox.StandardButton.Cancel:
+                    return
+
+            # Remove from tracking dicts
+            self.canvas_tabs.pop(widget)
             if hasattr(canvas, "filepath") and canvas.filepath:
                 filepath = str(Path(canvas.filepath).resolve())
                 self.open_file_tabs.pop(filepath, None)
+
+        elif hasattr(widget, "save_changes"):
+            # Handle editors like block editors (if needed)
+            current_text = self.tabs.tabText(index)
+            if current_text.endswith("*"):
+                msg_box = QMessageBox(self)
+                msg_box.setWindowTitle("Unsaved Changes")
+                msg_box.setText(f"Do you want to save changes to '{current_text[:-2]}'?")
+                msg_box.setIcon(QMessageBox.Icon.Question)
+                msg_box.setStandardButtons(
+                    QMessageBox.StandardButton.Save |
+                    QMessageBox.StandardButton.Discard |
+                    QMessageBox.StandardButton.Cancel
+                )
+                msg_box.setDefaultButton(QMessageBox.StandardButton.Save)
+                msg_box.setStyleSheet("""
+                    QMessageBox {
+                        color: black;
+                        font-size: 14px;
+                    }
+                    QPushButton {
+                        color: black;
+                    }
+                """)
+                response = msg_box.exec()
+
+                if response == QMessageBox.StandardButton.Save:
+                    self.tabs.setCurrentIndex(index)
+                    self.save_current_tab()
+                elif response == QMessageBox.StandardButton.Cancel:
+                    return
 
         self.tabs.removeTab(index)
 
