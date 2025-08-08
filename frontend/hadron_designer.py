@@ -25,6 +25,7 @@ class HadronDesignerWindow(QMainWindow):
         super().__init__()
         self.controller = controller
         self.canvas_tabs = {}
+        self.canvas_to_tab = {}
         self.open_file_tabs = {}  # maps file paths to tab widgets
 
 
@@ -273,6 +274,7 @@ class HadronDesignerWindow(QMainWindow):
         canvas.modified.connect(lambda: self.mark_canvas_tab_modified(canvas))
 
         self.canvas_tabs[tab_widget] = canvas
+        self.canvas_to_tab[canvas] = tab_widget
         self.open_file_tabs[filepath] = tab_widget
 
         conflicts = [f for f in self.open_file_tabs if Path(f).name == file_name and f != filepath]
@@ -398,34 +400,29 @@ class HadronDesignerWindow(QMainWindow):
     
     def get_current_canvas(self):
         current_tab = self.tabs.currentWidget()
-        return self.canvas_tabs.get(current_tab, None)
+
+        # Case 1: Direct lookup (expected if current_tab is the wrapper QWidget)
+        if current_tab in self.canvas_tabs:
+            canvas = self.canvas_tabs[current_tab]
+            print(f"[DEBUG] current_tab: {current_tab}, found in canvas_tabs")
+            return canvas
+
+        # Case 2: Look for a canvas inside the tab
+        canvas = current_tab.findChild(Canvas)
+        if canvas:
+            print(f"[DEBUG] current_tab: {current_tab}, found child canvas: {canvas}")
+            return canvas
+
+        # Case 3: Fallback (e.g., block editor with parent_canvas)
+        if hasattr(current_tab, "canvas"):
+            print(f"[DEBUG] current_tab: {current_tab}, using parent_canvas: {current_tab.canvas}")
+            return current_tab.canvas
+
+        print(f"[DEBUG] current_tab: {current_tab}, no canvas found.")
+        return None
 
 
-        # Safely check if buttons exist and are not None
-        has_buttons = all(
-            hasattr(self, name) and getattr(self, name) is not None
-            for name in ["add_block_button", "run_button", "add_block_menu"]
-        )
 
-        if canvas and has_buttons:
-            self.add_block_button.setText("➕ Add Block")
-            self.add_block_button.clicked.disconnect()
-            self.add_block_button.clicked.connect(lambda: canvas.add_block("Untitled Block"))
-
-            self.run_button.clicked.disconnect()
-            self.run_button.clicked.connect(lambda: run_all_blocks(self, canvas))
-
-            self.add_block_menu.clear()
-            self.add_block_menu.addAction("➕ Add Blank Block", canvas.add_block)
-            self.add_block_menu.addAction("📦 Import From Library", self.import_from_library)
-            self.add_block_menu.addAction("🔣 Add Variable Block", canvas.add_variable_block)
-            self.add_block_menu.addAction("🔀 Add Conditional Block", canvas.add_conditional_block)
-            self.add_block_menu.addAction("🔁 Add Loop Block", canvas.add_loop_block)
-
-        elif has_buttons:
-            self.add_block_button.setText("💾 Save")
-            self.add_block_button.clicked.disconnect()
-            self.add_block_button.clicked.connect(lambda: self.save_editor_tab(index))
 
 
 
@@ -489,11 +486,18 @@ class HadronDesignerWindow(QMainWindow):
                     canvas.save_layout(path)
                     print(f"💾 Saved as new file: {path}")
 
-        # === Case 2: Block Editor Tab (any tab with save_changes method)
+        # === Case 2: Block Editor Tab ===
         elif hasattr(current_tab, "save_changes") and callable(current_tab.save_changes):
             try:
                 current_tab.save_changes()
                 print("💾 Saved block editor tab.")
+
+                # Save canvas from block editor
+                canvas = getattr(current_tab, "canvas", None)
+                if canvas and hasattr(canvas, "filepath") and canvas.filepath:
+                    canvas.save_layout(canvas.filepath)
+                    print(f"✅ Also saved canvas to {canvas.filepath}")
+
             except Exception as e:
                 print(f"❌ Error saving block editor tab: {e}")
 
@@ -508,6 +512,7 @@ class HadronDesignerWindow(QMainWindow):
         self.controller.project.save()
         if current_label.endswith("*"):
             self.tabs.setTabText(tab_index, current_label[:-1])
+
 
 
 

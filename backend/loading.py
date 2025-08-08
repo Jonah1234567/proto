@@ -30,7 +30,7 @@ def load_file(self, filename, controller):
     # Recreate blocks
     id_to_block = {}
     for block_data in data["blocks"]:
-        block = Block(block_data["name"], self.tab_widget, controller=controller)
+        block = Block(block_data["name"], self.tab_widget, self,  controller=controller)
         block.block_type = block_data["block_type"]
         block.id = block_data["id"]
         block.background_color = block_data["background_color"]
@@ -66,7 +66,7 @@ def load_block_from_template(self, template, controller):
     outputs.from_dict(template.get("outputs", {}))
     input_mappings = template.get("input_mappings", {})
 
-    block = Block(name, self.tab_widget, background_color, controller=controller)
+    block = Block(name, self.tab_widget, self, background_color, controller=controller)
     block.block_type = block_type
     block.code = code
     block.inputs = inputs

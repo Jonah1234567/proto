@@ -19,9 +19,10 @@ class VariableBlockEditor(QWidget):
     modified = pyqtSignal()
     saved = pyqtSignal()
 
-    def __init__(self, block, tab_widget):
+    def __init__(self, block, tab_widget, canvas):
         super().__init__()
         self.block = block
+        self.canvas = canvas
         self.tab_widget = tab_widget
         self.setStyleSheet("color: black;")
 

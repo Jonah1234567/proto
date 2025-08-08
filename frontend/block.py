@@ -19,11 +19,11 @@ from backend.outputs_proxy import OutputsProxy
 from backend.saving import save_to_template
 
 class Block(QGraphicsObject):
-    def __init__(self, name, tab_widget, background_color="#74b9ff", controller=None):
+    def __init__(self, name, tab_widget, canvas, background_color="#74b9ff", controller=None):
         super().__init__()
         self.controller=controller
         self.id = str(uuid.uuid4())  # assign unique ID
-
+        self.canvas= canvas
         
         self.name = name
         self.block_type = "code"
@@ -152,13 +152,13 @@ class Block(QGraphicsObject):
         editor = None
 
         if self.block_type == 'code':
-            editor = BlockEditor(self, self.tab_widget)
+            editor = BlockEditor(self, self.tab_widget, self.canvas)
         elif self.block_type == 'variable':
-            editor = VariableBlockEditor(self, self.tab_widget)
+            editor = VariableBlockEditor(self, self.tab_widget, self.canvas)
         elif self.block_type == 'conditional':
-            editor = ConditionalBlockEditor(self, self.tab_widget)
+            editor = ConditionalBlockEditor(self, self.tab_widget, self.canvas)
         elif self.block_type == 'loop':
-            editor = LoopBlockEditor(self, self.tab_widget)
+            editor = LoopBlockEditor(self, self.tab_widget, self.canvas)
         else:
             print(f"❌ Unknown block type: {self.block_type!r}")
             return  # or raise an error

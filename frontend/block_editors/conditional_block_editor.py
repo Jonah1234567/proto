@@ -15,9 +15,10 @@ from backend.saving import save_to_template
 class ConditionalBlockEditor(QWidget):
     modified = pyqtSignal()
     saved = pyqtSignal()
-    def __init__(self, block, tab_widget):
+    def __init__(self, block, tab_widget, canvas):
         super().__init__()
         self.block = block
+        self.canvas = canvas
         self.tab_widget = tab_widget
         self.setStyleSheet("color: black;")
         self.layout = QVBoxLayout(self)

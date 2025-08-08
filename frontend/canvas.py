@@ -165,7 +165,7 @@ class Canvas(QGraphicsView):
         if name == "":
             name = f"Block {len(self.blocks) + 1}"
         print(name)
-        block = Block(name, self.tab_widget, background_color="#74b9ff", controller=self.controller)
+        block = Block(name, self.tab_widget, self, background_color="#74b9ff", controller=self.controller)
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
         self.blocks.append(block)
@@ -184,7 +184,7 @@ class Canvas(QGraphicsView):
         self.modified.emit()
 
         name = f"Conditonal Block {len(self.blocks) + 1}"
-        block = Block(name, self.tab_widget, background_color="#fab1a0", controller=self.controller)
+        block = Block(name, self.tab_widget, self, background_color="#fab1a0", controller=self.controller)
         block.block_type = "conditional"
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
@@ -194,7 +194,7 @@ class Canvas(QGraphicsView):
         self.modified.emit()
 
         name = f"Loop Block {len(self.blocks) + 1}"
-        block = Block(name, self.tab_widget, background_color="#55efc4", controller=self.controller)
+        block = Block(name, self.tab_widget, self, background_color="#55efc4", controller=self.controller)
         block.block_type = "loop"
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
@@ -204,7 +204,7 @@ class Canvas(QGraphicsView):
         self.modified.emit()
 
         name = f"Start Block"
-        block = Block(name, self.tab_widget, controller=self.controller)
+        block = Block(name, self.tab_widget, self, controller=self.controller)
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
         self.blocks.append(block)
