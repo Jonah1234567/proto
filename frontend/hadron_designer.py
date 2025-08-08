@@ -12,6 +12,7 @@ from components.file_sidebar import FileSidebar
 from PyQt6.QtGui import QShortcut, QKeySequence
 
 import sys
+import os
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
@@ -255,9 +256,9 @@ class HadronDesignerWindow(QMainWindow):
         return canvas, canvas_tab
 
     def open_quark_file(self, filepath):
-        filepath = str(Path(filepath).resolve())  # normalize path
+        filepath = str(Path(filepath).resolve())
 
-        # ✅ Check if this file is already open
+        # Check if this file is already open
         if filepath in self.open_file_tabs:
             existing_tab = self.open_file_tabs[filepath]
             self.tabs.setCurrentWidget(existing_tab)
@@ -268,28 +269,37 @@ class HadronDesignerWindow(QMainWindow):
         canvas, tab_widget = self.create_canvas(True)
         canvas.filepath = filepath
 
-        # Load content into canvas
         canvas.load_layout(filepath)
         canvas.modified.connect(lambda: self.mark_canvas_tab_modified(canvas))
 
-        # Track the canvas and file → tab mapping
         self.canvas_tabs[tab_widget] = canvas
         self.open_file_tabs[filepath] = tab_widget
 
-        # Add tab and switch to it
-        self.tabs.addTab(tab_widget, f"📄 {file_name}")
-        self.tabs.setCurrentWidget(tab_widget)
+        conflicts = [f for f in self.open_file_tabs if Path(f).name == file_name and f != filepath]
+        if conflicts:
+            rel_path = str(Path(filepath).relative_to(self.controller.project.base_path))
+            tab_label = f"📄 {rel_path.replace(os.sep, '/')}"
+        else:
+            tab_label = f"📄 {file_name}"
 
-        # Manually trigger tab change logic to update button connections
+
+        self.tabs.addTab(tab_widget, tab_label)
+        self.tabs.setCurrentWidget(tab_widget)
         self.on_tab_changed(self.tabs.currentIndex())
+
 
 
     def clear_output_box(self):
         self.output_box.clear()
 
     def run_blocks(self):
-        print("▶ Executing all blocks...")
-        run_all_blocks(self, self.canvas)
+        canvas = self.get_current_canvas()
+        if canvas is None:
+            print("❌ No canvas found for current tab.")
+            return
+        print(f"▶ Executing all blocks for canvas: {canvas.filepath}")
+        run_all_blocks(self, canvas)
+
 
     def save_layout_prompt(self):
         path, _ = QFileDialog.getSaveFileName(self, "Save Layout", "", "JSON Files (*.json)")
@@ -302,9 +312,19 @@ class HadronDesignerWindow(QMainWindow):
             self.canvas.load_layout(path)
 
     def close_tab(self, index):
-        if self.tabs.tabText(index) == "Canvas":
-            return
+        widget = self.tabs.widget(index)
+
+        # Remove from canvas_tabs if it's a canvas tab
+        if widget in self.canvas_tabs:
+            canvas = self.canvas_tabs.pop(widget)
+
+            # Also remove from open_file_tabs using the resolved file path
+            if hasattr(canvas, "filepath") and canvas.filepath:
+                filepath = str(Path(canvas.filepath).resolve())
+                self.open_file_tabs.pop(filepath, None)
+
         self.tabs.removeTab(index)
+
 
     def save_editor_tab(self, index):
         editor_widget = self.tabs.widget(index)
@@ -314,6 +334,11 @@ class HadronDesignerWindow(QMainWindow):
     def on_tab_changed(self, index):
         current_widget = self.tabs.widget(index)
         canvas = self.canvas_tabs.get(current_widget)
+    
+    def get_current_canvas(self):
+        current_tab = self.tabs.currentWidget()
+        return self.canvas_tabs.get(current_tab, None)
+
 
         # Safely check if buttons exist and are not None
         has_buttons = all(
