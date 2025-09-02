@@ -20,6 +20,7 @@ from frontend.block import Block
 
 class Canvas(QGraphicsView):
     modified = pyqtSignal()
+    graphChanged = pyqtSignal()
     def __init__(self, tab_widget, controller):
         super().__init__()
         self.filepath= None
@@ -35,7 +36,9 @@ class Canvas(QGraphicsView):
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         self.scene = QGraphicsScene(-10000, -10000, 20000, 20000)
+        self.scene.canvas = self     
         self.setScene(self.scene)
+        self.graphChanged.connect(self.rebuild_wiring)
 
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -57,6 +60,41 @@ class Canvas(QGraphicsView):
         self._pan_start = QPointF()
         
         self.add_start_block()
+
+    def rebuild_wiring(self):
+        """
+        Rebuild backend wiring from self.connections.
+        Adjust this to your real data structures (inputs_proxy, outputs_proxy, etc.)
+        """
+        # 1) Clear runtime input mappings on all blocks
+        for b in self.blocks:
+            # proxies version (if you have them)
+            if hasattr(b, "inputs_proxy") and hasattr(b.inputs_proxy, "reset"):
+                b.inputs_proxy.reset()
+            # dict version (common fallback)
+            if hasattr(b, "inputs") and isinstance(b.inputs, dict):
+                for k in list(b.inputs.keys()):
+                    b.inputs[k] = []
+
+            # clear caches/compiled plan placeholders
+            if hasattr(b, "last_result"):
+                b.last_result = None
+
+        # 2) Re-apply wiring from active connections
+        for conn in self.connections:
+            src = conn.start_block
+            dst = conn.end_block
+            # If you have named ports, use conn.src_port/conn.dst_port here
+            if hasattr(dst, "inputs_proxy") and hasattr(dst.inputs_proxy, "connect_from"):
+                dst.inputs_proxy.connect_from(src)  # or (src, portA, portB)
+            elif hasattr(dst, "inputs") and isinstance(dst.inputs, dict):
+                # generic: store a single default input list
+                dst.inputs.setdefault("default", []).append({"src_block": src})
+
+        # 3) clear any compiled plan on canvas if you keep one
+        if hasattr(self, "_compiled_plan"):
+            self._compiled_plan = None
+
 
     def wheelEvent(self, event: QWheelEvent):
         zoom_factor = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
@@ -210,19 +248,20 @@ class Canvas(QGraphicsView):
         self.blocks.append(block)
         block.mark_as_start_block()
 
-
+    # canvas.py
     def create_connection(self, start_block, end_block):
         self.modified.emit()
-
-        print(start_block, end_block)
         for conn in self.connections:
             if conn.start_block == start_block and conn.end_block == end_block:
                 print("🚫 Duplicate connection ignored")
                 return
 
         print(f"📍 Drawing connection from {start_block.name} to {end_block.name}")
-        connection = Connection(start_block, end_block, self.scene)
+        connection = Connection(start_block, end_block, self)  # ✅ pass canvas
         self.connections.append(connection)
+        self.sync_io_to_connections()
+
+
 
     def cancel_connection(self):
         self._clear_temp_line()
@@ -244,5 +283,72 @@ class Canvas(QGraphicsView):
         self.scene.addItem(block)
         self.blocks.append(block)
 
+    def remove_all_connections(self):
+        # remove connection graphics + detach from blocks
+        for conn in list(self.connections):
+            # detach from block lists
+            if conn in conn.start_block.outgoing_connections:
+                conn.start_block.outgoing_connections.remove(conn)
+            if conn in conn.end_block.incoming_connections:
+                conn.end_block.incoming_connections.remove(conn)
 
+            # remove graphics
+            self.scene.removeItem(conn.line)
+            self.scene.removeItem(conn.arrow)
 
+        # clear the canvas registry
+        self.connections.clear()
+
+        # mark every block’s IO as "not connected"
+        for b in self.blocks:
+            # clear model-side lists/dicts if you use them
+            if hasattr(b, "incoming_connections"):
+                b.incoming_connections[:] = []
+            if hasattr(b, "outgoing_connections"):
+                b.outgoing_connections[:] = []
+
+            if hasattr(b, "inputs") and isinstance(b.inputs, dict):
+                for k in list(b.inputs.keys()):
+                    b.inputs[k] = []   # or None, depending on your schema
+
+            if hasattr(b, "outputs") and isinstance(b.outputs, dict):
+                for k in list(b.outputs.keys()):
+                    b.outputs[k] = []  # or None
+
+            # if you track a simple flag per port or have a method to flip UI state:
+            if hasattr(b, "set_all_ports_connected"):
+                try:
+                    b.set_all_ports_connected(False)
+                except Exception:
+                    pass
+            # (optional) if your port items change color when disconnected, do it here
+
+        # optional: mark dirty
+        if hasattr(self, "modified"):
+            self.modified.emit()
+
+    def sync_io_to_connections(self):
+        """Force backend IO maps to match current visible connections."""
+        # 1) Clear every block's inputs/outputs
+        for b in self.blocks:
+            if hasattr(b, "inputs") and isinstance(b.inputs, dict):
+                for k in list(b.inputs.keys()):
+                    b.inputs[k] = []    # or None if that's your schema
+            if hasattr(b, "outputs") and isinstance(b.outputs, dict):
+                for k in list(b.outputs.keys()):
+                    b.outputs[k] = []
+
+        # 2) Rebuild from self.connections
+        for conn in self.connections:
+            src = conn.start_block
+            dst = conn.end_block
+
+            # Use a stable identifier (prefer id, fallback to name)
+            src_id = getattr(src, "id", getattr(src, "name", id(src)))
+            dst_id = getattr(dst, "id", getattr(dst, "name", id(dst)))
+
+            # If you have port names, add conn.src_port / conn.dst_port here.
+            if hasattr(dst, "inputs") and isinstance(dst.inputs, dict):
+                dst.inputs.setdefault("default", []).append({"src_block_id": src_id})
+            if hasattr(src, "outputs") and isinstance(src.outputs, dict):
+                src.outputs.setdefault("default", []).append({"dst_block_id": dst_id})

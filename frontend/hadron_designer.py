@@ -290,7 +290,6 @@ class HadronDesignerWindow(QMainWindow):
         self.on_tab_changed(self.tabs.currentIndex())
 
 
-
     def clear_output_box(self):
         self.output_box.clear()
 
@@ -300,6 +299,7 @@ class HadronDesignerWindow(QMainWindow):
             print("❌ No canvas found for current tab.")
             return
         print(f"▶ Executing all blocks for canvas: {canvas.filepath}")
+        canvas.rebuild_wiring()
         run_all_blocks(self, canvas)
 
 
@@ -420,10 +420,6 @@ class HadronDesignerWindow(QMainWindow):
 
         print(f"[DEBUG] current_tab: {current_tab}, no canvas found.")
         return None
-
-
-
-
 
 
     def import_from_library(self):

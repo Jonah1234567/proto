@@ -229,6 +229,59 @@ class Block(QGraphicsObject):
             if label.endswith("*"):
                 self.tab_widget.setTabText(index, label[:-1])
 
+    def detach_input_from(self, src_block):
+        # proxies version
+        if hasattr(self, "inputs_proxy") and hasattr(self.inputs_proxy, "disconnect_from"):
+            self.inputs_proxy.disconnect_from(src_block)
+
+        # dict version (fallback)
+        if hasattr(self, "inputs") and isinstance(self.inputs, dict):
+            changed = False
+            for k, v in list(self.inputs.items()):
+                if isinstance(v, list):
+                    new_v = [m for m in v if m.get("src_block") is not src_block]
+                    if new_v != v:
+                        self.inputs[k] = new_v
+                        changed = True
+            return changed
+        return False
+
+    def _detach_input_from(self, src_block):
+        """Remove src_block from this block's inputs (dict/list/proxy)."""
+        # Dict-of-lists schema
+        if hasattr(self, "inputs") and isinstance(self.inputs, dict):
+            for k, v in list(self.inputs.items()):
+                if isinstance(v, list):
+                    # entries may be {"src_block": obj} or raw objects
+                    self.inputs[k] = [
+                        m for m in v
+                        if not (getattr(m, "get", lambda *_: None)("src_block") is src_block
+                                or m is src_block)
+                    ]
+
+        # Proxy schema
+        if hasattr(self, "inputs_proxy"):
+            # try common API names; ignore if missing
+            for meth in ("disconnect_from", "remove_source", "unlink"):
+                fn = getattr(self.inputs_proxy, meth, None)
+                if callable(fn):
+                    try: fn(src_block)
+                    except Exception: pass
+
+    def _detach_output_to(self, dst_block):
+        """Remove dst_block from this block's outputs (dict/list/proxy)."""
+        if hasattr(self, "outputs") and isinstance(self.outputs, dict):
+            for k, v in list(self.outputs.items()):
+                if isinstance(v, list):
+                    self.outputs[k] = [m for m in v if m is not dst_block and getattr(m, "dst", None) is not dst_block]
+
+        if hasattr(self, "outputs_proxy"):
+            for meth in ("disconnect_to", "remove_target", "unlink"):
+                fn = getattr(self.outputs_proxy, meth, None)
+                if callable(fn):
+                    try: fn(dst_block)
+                    except Exception: pass
+
 
 
 
