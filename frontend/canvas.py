@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem,
 from PyQt6.QtGui import QPainter, QColor, QWheelEvent, QPen
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtCore import pyqtSignal
-
+from io_mapper import IOMapperDialog 
 
 from connection import Connection
 from connection import ConnectionLine
@@ -248,7 +248,10 @@ class Canvas(QGraphicsView):
         self.blocks.append(block)
         block.mark_as_start_block()
 
-    # canvas.py
+    def open_io_mapper(self, block):
+        dialog = IOMapperDialog(block, self.tab_widget)
+        dialog.exec()  
+
     def create_connection(self, start_block, end_block):
         self.modified.emit()
         for conn in self.connections:
@@ -260,6 +263,7 @@ class Canvas(QGraphicsView):
         connection = Connection(start_block, end_block, self)  # ✅ pass canvas
         self.connections.append(connection)
         self.sync_io_to_connections()
+        self.open_io_mapper(end_block)
 
 
 
