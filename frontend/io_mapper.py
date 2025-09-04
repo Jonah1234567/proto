@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QPointF, QRectF
 from PyQt6.QtGui import QPainterPath, QPen, QColor, QCursor
 import math
+from PyQt6.QtGui import QFontMetricsF 
 
 
 class IOMapperDialog(QDialog):
@@ -38,20 +39,27 @@ class IOMapperDialog(QDialog):
 
         # --- Header with mode slider ---
         head = QHBoxLayout()
+
         title = QLabel(f"<b>{getattr(block, 'name', 'Block')}</b> • {len(self._inputs)} inputs • {len(self._upstreams)} upstream outputs")
-        title.setProperty("class", "h1")
+        title.setStyleSheet("color:#000; font-size:16px; font-weight:600; margin:0;")
+
         subtitle = QLabel("Configure connections via wiring (left) or menus (right).")
-        subtitle.setProperty("class", "h2")
+        subtitle.setStyleSheet("color:#000; font-size:12px; margin:0; padding-left:6px;")
+
         head.addWidget(title, 1)
         head.addWidget(subtitle, 0)
 
-
-        head.addWidget(QLabel("Wire"))
+        lbl_wire = QLabel("Wire")
+        lbl_wire.setStyleSheet("color:#000; font-size:12px; margin:0;")
         self.mode_slider = QSlider(Qt.Orientation.Horizontal)
-        self.mode_slider.setMinimum(0); self.mode_slider.setMaximum(1); self.mode_slider.setValue(self.MODE_MENU)  # start in MENU
+        self.mode_slider.setMinimum(0); self.mode_slider.setMaximum(1); self.mode_slider.setValue(self.MODE_MENU)
         self.mode_slider.setFixedWidth(100)
+        lbl_menu = QLabel("Menu")
+        lbl_menu.setStyleSheet("color:#000; font-size:12px; margin:0;")
+
+        head.addWidget(lbl_wire)
         head.addWidget(self.mode_slider)
-        head.addWidget(QLabel("Menu"))
+        head.addWidget(lbl_menu)
         main.addLayout(head)
 
         # --- Filter + buttons ---
@@ -116,6 +124,14 @@ class IOMapperDialog(QDialog):
         }
         QScrollBar::handle:horizontal:hover { background: #B0B6C0; }
         QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
+
+        /* Ensure all text is black by default */
+        QLabel { color: #000; }
+        QPushButton { color: #000; }
+        QLineEdit, QComboBox { color: #000; }
+        QComboBox QAbstractItemView { color: #000; background: #fff; }
+
+
         """)
 
         # --- Wire up ---
@@ -181,81 +197,96 @@ class IOMapperDialog(QDialog):
 
         # Card
         card = QWidget()
-        card.setObjectName("MenuCard")                    # << scope by id
+        card.setObjectName("MenuCard")
         card.setStyleSheet("""
             #MenuCard {
                 background: #FAFAFA;
                 border: 1px solid #E5E5E5;
                 border-radius: 12px;
             }
+            /* ✅ Make sure ALL text is black, including popup list */
+            QLabel, QComboBox, QComboBox QAbstractItemView { color: #000; }
+            QComboBox QAbstractItemView {
+                background: #fff;
+                selection-background-color: #e9ecef;
+                selection-color: #000;
+            }
         """)
-
         card_lay = QVBoxLayout(card)
         card_lay.setContentsMargins(16,16,16,16)
-        card_lay.setSpacing(12)
+        card_lay.setSpacing(10)
 
-        header = QLabel("Inputs ↔ Sources")
-        header.setProperty("class", "h1")
+        header = QLabel("Argument ↔ Target")
+        header.setStyleSheet("color:#000; font-weight:600; font-size:14px; margin:0;")
         card_lay.addWidget(header)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)  # cleaner
+        card_lay.addWidget(scroll)
 
+        # Body/grid
         body = QWidget()
         grid = QGridLayout(body)
-       # inside _build_menu_view(), after creating `grid`
         grid.setContentsMargins(8, 4, 8, 4)
-        grid.setHorizontalSpacing(12)
-        grid.setVerticalSpacing(8)
+        grid.setHorizontalSpacing(10)
+        grid.setVerticalSpacing(6)
         grid.setColumnStretch(0, 0)   # labels
         grid.setColumnStretch(1, 1)   # combos
-
-        # header row
-        grid.addWidget(QLabel("<b>Input</b>"), 0, 0)
-        grid.addWidget(QLabel("<b>Source</b>"), 0, 1)
-        grid.setColumnStretch(0, 0)
-        grid.setColumnStretch(1, 1)
         grid.setColumnMinimumWidth(0, 140)
 
+        # ✅ Small, fixed-height column headers (won't eat space)
+        hdr_in  = QLabel("Argument")
+        hdr_src = QLabel("Target")
+        for hdr in (hdr_in, hdr_src):
+            hdr.setStyleSheet("color:#000; font-weight:600; font-size:12px; margin:0; padding:0;")
+            hdr.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            hdr.setFixedHeight(18)
+        grid.addWidget(hdr_in,  0, 0)
+        grid.addWidget(hdr_src, 0, 1)
 
         self._rows.clear()
         row = 1
         if not self._inputs:
             empty = QLabel("⚠️ This block has no defined inputs.")
-            empty.setStyleSheet("color:#666;")
+            empty.setStyleSheet("color:#000;")
             grid.addWidget(empty, row, 0, 1, 2)
-        else:
-           for input_name in self._inputs:
-            lbl = QLabel(input_name)
-            lbl.setMinimumWidth(140)
-            lbl.setMaximumWidth(200)
-            lbl.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-
-            combo = QComboBox()
-            combo.addItem("— Not Connected —", userData=None)
-            for (blk_name, blk_id, out_name) in self._upstreams:
-                combo.addItem(f"{blk_name}.{out_name}", userData=(blk_id, out_name))
-
-            # compact sizing
-            combo.setFixedHeight(28)
-            combo.setMinimumWidth(220)
-            combo.setMaximumWidth(320)
-            combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-            combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-            combo.setMinimumContentsLength(14)
-            # shrink padding even if global CSS is generous
-            combo.setStyleSheet("QComboBox{min-height:24px;padding:2px 6px;}")
-
-            grid.addWidget(lbl, row, 0)
-            grid.addWidget(combo, row, 1)
-            self._rows[input_name] = (lbl, combo)
             row += 1
+        else:
+            for input_name in self._inputs:
+                lbl = QLabel(input_name)
+                lbl.setStyleSheet("color:#000;")
+                lbl.setMinimumWidth(140)
+                lbl.setMaximumWidth(200)
+                lbl.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
+                combo = QComboBox()
+                combo.addItem("— Not Connected —", userData=None)
+                for (blk_name, blk_id, out_name) in self._upstreams:
+                    combo.addItem(f"{blk_name}.{out_name}", userData=(blk_id, out_name))
+
+                # ✅ Compact combo sizing
+                combo.setFixedHeight(26)
+                combo.setMinimumWidth(220)
+                combo.setMaximumWidth(320)
+                combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+                combo.setMinimumContentsLength(14)
+                combo.setStyleSheet("QComboBox { min-height:22px; padding:2px 6px; }")
+
+                grid.addWidget(lbl,   row, 0)
+                grid.addWidget(combo, row, 1)
+                self._rows[input_name] = (lbl, combo)
+                row += 1
+
+        # ✅ Top-anchor the grid content (push spare space below rows)
+        grid.setRowStretch(0, 0)      # header row not stretchy
+        grid.setRowStretch(row, 1)    # add stretchy "spacer" after last row
 
         scroll.setWidget(body)
-        card_lay.addWidget(scroll)
         layout.addWidget(card)
         return wrap
+
 
     def _apply_filter(self):
         q = self.filter_edit.text().strip().lower()
@@ -380,6 +411,8 @@ class IOMapperDialog(QDialog):
         self._wire_view.viewport().installEventFilter(self)
         return wrap
 
+   
+
     def _populate_wire_scene(self, filter_text: str = ""):
         q = filter_text.strip().lower()
         sc = self._wire_scene
@@ -388,110 +421,141 @@ class IOMapperDialog(QDialog):
         self._port_items_out = []
         self._port_items_in = []
 
-        # Scene/column layout
-        margin = 24
-        col_w  = 420
-        col_h  = 720
-        gap_x  = 120  # space between columns
-        left_x = margin + 24                 # x of left dots
-        right_x = margin + col_w + gap_x + col_w - 24  # x of right dots
-        top_y  = margin
-        dy     = 48
-        dot_r  = 8
-        label_gap = 12   # text distance from dot
-        lift     = 12    # raise labels above wire level
-        header_gap_down = 16  # move headers down closer to first row
+        # Layout constants
+        margin   = 24
+        col_w    = 420
+        col_h    = 720
+        gap_x    = 120
+        panel_lx = margin                  # left panel x
+        panel_rx = margin + col_w + gap_x  # right panel x
+        pad_in   = 24                      # inner panel padding
+        left_x   = panel_lx + pad_in       # dot x (left column)
+        right_x  = panel_rx + col_w - pad_in  # dot x (right column)
+        top_y    = margin
+        dy       = 48
+        dot_r    = 8
+        text_gap = 10      # distance from dot to text
+        lift     = 12      # raise labels above wire level
+        header_gap = 16    # distance header above first row
 
-        # optional: draw subtle column panels (nice for centering visual)
-        def add_panel(x, y, w, h, title):
+        # Panels
+        def add_panel(x, y, w, h):
             rect = sc.addRect(x-12, y-12, w, h, QPen(QColor("#E5E5E5"), 1.2), QColor("#FAFAFA"))
             rect.setZValue(0)
             return rect
 
-        add_panel(margin, top_y, col_w, col_h, "Upstream Outputs")
-        add_panel(margin + col_w + gap_x, top_y, col_w, col_h, "Inputs")
+        add_panel(panel_lx, top_y, col_w, col_h)
+        add_panel(panel_rx, top_y, col_w, col_h)
 
-        # headers: centered over each column, slightly underlined, moved down a bit
+        # Centered headers (Targets | Arguments), in black
         def add_centered_header(text, center_x, y):
             t = sc.addSimpleText(text)
             f = t.font(); f.setBold(True); f.setUnderline(True)
             t.setFont(f)
-            t.setBrush(QColor("#111"))
+            t.setBrush(QColor("#000"))
             br = t.boundingRect()
             pad = 3
             bg = sc.addRect(0, 0, br.width() + pad*2, br.height() + pad*2,
                             QPen(Qt.PenStyle.NoPen), QColor("#FAFAFA"))
-            t.setZValue(3.0)
-            bg.setZValue(2.5)
-            t.setPos(center_x - br.width()/2, y - br.height())     # centered
+            t.setZValue(3.0); bg.setZValue(2.5)
+            t.setPos(center_x - br.width()/2, y - br.height())
             bg.setPos(center_x - br.width()/2 - pad, y - br.height() - pad)
             return t, bg
 
-        # filtered lists so we can center vertically
+        # Filtered lists
         ups = []
         for (blk_name, blk_id, out_name) in self._upstreams:
             label = f"{blk_name}.{out_name}"
             if not q or q in label.lower():
                 ups.append((blk_name, blk_id, out_name, label))
+        ins = [nm for nm in self._inputs if (not q or q in nm.lower())]
 
-        ins = []
-        for input_name in self._inputs:
-            if not q or q in input_name.lower():
-                ins.append(input_name)
+        # Unified vertical band centering (both columns align)
+        count_max = max(len(ups), len(ins), 1)
+        total_h   = count_max * dy
+        free_h    = max(0, col_h - total_h)
+        band_top  = top_y + max(36, free_h / 2)
 
-        # compute vertical centering inside panels
-        def centered_start(count):
-            if count <= 0: return top_y + 48  # fallback
-            total = count * dy
-            free  = col_h - total
-            offset = max(36, free/2)  # keep some top padding even when many rows
-            return top_y + offset
+        # Each column offset to center shorter list within the band
+        y_out = band_top + ((count_max - len(ups)) * dy) / 2
+        y_in  = band_top + ((count_max - len(ins)) * dy) / 2
 
-        y_out = centered_start(len(ups))
-        y_in  = centered_start(len(ins))
+        # Headers directly above first rows, centered within panels
+        left_center  = panel_lx + col_w/2
+        right_center = panel_rx + col_w/2
+        add_centered_header("Targets",   left_center,  y_out - header_gap)
+        add_centered_header("Arguments", right_center, y_in  - header_gap)
 
-        # headers positioned just above the first row, centered horizontally
-        left_center  = margin + col_w/2
-        right_center = margin + col_w + gap_x + col_w/2
-        add_centered_header("Outputs", left_center,  y_out - header_gap_down)
-        add_centered_header("Inputs",  right_center, y_in  - header_gap_down)
-
-        # helper: label with a small bg so wires never strike through
-        def add_label_with_bg(text, x, y, align="left"):
+        # Helper: add label INSIDE panel with ellipsis if too wide; stays above wire level
+        def add_clamped_label(text, x_anchor, y, side, panel_x, panel_w):
+            """
+            side: 'right' → place text to RIGHT of dot; 'left' → to LEFT of dot.
+            Keeps text within [panel_x + pad_in, panel_x + panel_w - pad_in].
+            """
             t = sc.addSimpleText(text)
-            t.setBrush(QColor("#333"))
+            t.setBrush(QColor("#000"))
             br = t.boundingRect()
             pad = 3
+            # background plate to keep wires from striking through
             bg = sc.addRect(0, 0, br.width() + pad*2, br.height() + pad*2,
                             QPen(Qt.PenStyle.NoPen), QColor("#FAFAFA"))
-            bg.setZValue(2.5)
-            t.setZValue(3.0)
+            bg.setZValue(2.5); t.setZValue(3.0)
+
             y_text = y - lift
-            if align == "left":
-                bg.setPos(x - br.width() - pad, y_text - pad)
-                t.setPos(x - br.width(), y_text)
-            else:
-                bg.setPos(x - pad, y_text - pad)
-                t.setPos(x, y_text)
+
+            # available horizontal span inside the panel
+            min_x = panel_x + pad_in
+            max_x = panel_x + panel_w - pad_in
+
+            # Desired text x (before clamping)
+            if side == "right":
+                desired_x = x_anchor + text_gap
+                # Clamp so entire text fits
+                x = min(desired_x, max_x - br.width())
+                x = max(x, min_x)
+            else:  # 'left'
+                desired_x = x_anchor - text_gap - br.width()
+                x = max(desired_x, min_x)
+                x = min(x, max_x - br.width())
+
+            # If still too wide, ellipsize text to fit
+            fm = QFontMetricsF(t.font())
+            max_w = max_x - x
+            if br.width() > max_w:
+                s = text
+                # quick ellipsis loop
+                while s and fm.horizontalAdvance(s + "…") > max_w:
+                    s = s[:-1]
+                if s:
+                    s = s + "…"
+                t.setText(s)
+                br = t.boundingRect()  # update after change
+
+            # Position items
+            t.setPos(x, y_text)
+            bg.setRect(0, 0, br.width() + pad*2, br.height() + pad*2)
+            bg.setPos(x - pad, y_text - pad)
             return t, bg
 
-        # --- place outputs (left), labels to the LEFT of dot ---
-        for (blk_name, blk_id, out_name, label) in ups:
-            port = IOMapperDialog._PortCircle(left_x, y_out, dot_r, label, "out", (blk_id, out_name))
+        # Place outputs (left): text to the RIGHT of the dot (inside panel)
+        cur_y = y_out
+        for (_, blk_id, out_name, label) in ups:
+            port = IOMapperDialog._PortCircle(left_x, cur_y, dot_r, label, "out", (blk_id, out_name))
             sc.addItem(port); port.setZValue(3)
-            add_label_with_bg(label, left_x - label_gap, y_out, align="left")
+            add_clamped_label(label, left_x, cur_y, side="right", panel_x=panel_lx, panel_w=col_w)
             self._port_items_out.append(port)
-            y_out += dy
+            cur_y += dy
 
-        # --- place inputs (right), labels to the RIGHT of dot ---
+        # Place inputs (right): text to the LEFT of the dot (inside panel)
+        cur_y = y_in
         for input_name in ins:
-            port = IOMapperDialog._PortCircle(right_x, y_in, dot_r, input_name, "in", input_name)
+            port = IOMapperDialog._PortCircle(right_x, cur_y, dot_r, input_name, "in", input_name)
             sc.addItem(port); port.setZValue(3)
-            add_label_with_bg(input_name, right_x + label_gap, y_in, align="right")
+            add_clamped_label(input_name, right_x, cur_y, side="left", panel_x=panel_rx, panel_w=col_w)
             self._port_items_in.append(port)
-            y_in += dy
+            cur_y += dy
 
-        # restore saved wires
+        # Restore saved wires
         saved = getattr(self.block, "input_mappings", {}) or {}
         for input_name, mapping in saved.items():
             blk_id = mapping.get("block_id")
@@ -500,6 +564,12 @@ class IOMapperDialog(QDialog):
             dst = self._find_in_port(input_name)
             if src and dst:
                 self._add_wire(src, dst)
+
+        # Fit scene rect to content & center
+        bounds = sc.itemsBoundingRect().adjusted(-24, -24, 24, 24)
+        sc.setSceneRect(bounds)
+        self._wire_view.centerOn(bounds.center())
+
 
 
     def _find_out_port(self, blk_id, out_name):
