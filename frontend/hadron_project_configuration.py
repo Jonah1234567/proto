@@ -15,6 +15,9 @@ import json
 from PyQt6.QtWidgets import QMenu
 
 
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSizePolicy
+from PyQt6.QtCore import Qt
+from pathlib import Path
 
 
 class HadronProjectConfiguration(QWidget):
@@ -29,40 +32,46 @@ class HadronProjectConfiguration(QWidget):
         main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # === Section 1: Project Overview ===
+
+
+        # --- Top bar: visible, clickable, right-aligned Save ---
+        header = QWidget(self)
+        header.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+
+        topbar = QHBoxLayout(header)
+        topbar.setContentsMargins(0, 0, 0, 0)
+        topbar.setSpacing(8)
+        topbar.addStretch(1)
+
+        self.save_btn = QPushButton("💾 Save")
+        self.save_btn.setEnabled(True)
+        self.save_btn.setToolTip("Save project settings")
+        self.save_btn.clicked.connect(lambda: self.save_project(
+            name=self.name_input.text().strip(),
+            project_type=self.type_combo.currentText()
+        ))
+        topbar.addWidget(self.save_btn, alignment=Qt.AlignmentFlag.AlignRight)
+
+        main_layout.addWidget(header)  # <- add the WIDGET, not just the layout
+
         overview_box = QGroupBox("📁 Project Overview")
         overview_layout = QFormLayout()
 
         self.name_input = QLineEdit()
+        self.name_input.setText(controller.project.name) 
+        self.name_input.setDisabled(True)
         overview_layout.addRow("Project Name:", self.name_input)
 
         self.type_combo = QComboBox()
-        self.type_combo.addItems(["Hadron", "Quantum", "Neural", "Classic"])
+        self.type_combo.addItems(["Hadron", "Lepton"])
+        self.type_combo.setCurrentText(controller.project.project_type)
         overview_layout.addRow("Project Type:", self.type_combo)
 
         overview_box.setLayout(overview_layout)
         main_layout.addWidget(overview_box)
 
-        # === Section 2: Environment Setup ===
-        env_box = QGroupBox("⚙️ Environment Setup")
-        env_layout = QFormLayout()
+       
 
-        dir_row = QHBoxLayout()
-        self.dir_input = QLineEdit()
-        browse_button = QPushButton("Browse")
-        browse_button.clicked.connect(self.browse_directory)
-        dir_row.addWidget(self.dir_input)
-        dir_row.addWidget(browse_button)
-        env_layout.addRow("Save Directory:", dir_row)
-
-        self.entry_input = QLineEdit()
-        env_layout.addRow("Entry Block (optional):", self.entry_input)
-
-        self.runtime_combo = QComboBox()
-        self.runtime_combo.addItems(["Local CPU", "Local GPU", "Remote (Cloud)", "Edge Device"])
-        env_layout.addRow("Runtime Target:", self.runtime_combo)
-
-        env_box.setLayout(env_layout)
-        main_layout.addWidget(env_box)
 
         # === Section 3: Installed Packages ===
         packages_box = QGroupBox("📦 Installed Packages")
@@ -162,7 +171,204 @@ class HadronProjectConfiguration(QWidget):
         self.package_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.package_table.customContextMenuRequested.connect(self.show_context_menu)
 
+        
+        # --- Actions Row ---
+        actions_row = QHBoxLayout()
+        actions_row.setSpacing(20)  # extra spacing between buttons
 
+        btn_style = """
+        QPushButton {
+            padding: 6px 14px;
+            border: 2px solid #555;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+        }
+        QPushButton:hover {
+            background-color: #e6e6e6;
+        }
+        QPushButton:pressed {
+            background-color: #dcdcdc;
+        }
+        """
+
+        self.btn_load_req = QPushButton("📂 Load Requirements.txt")
+        self.btn_load_req.setStyleSheet(btn_style)
+        self.btn_load_req.clicked.connect(self.install_requirements_txt)
+
+        self.btn_save_env = QPushButton("💾 Save Current Environment")
+        self.btn_save_env.setStyleSheet(btn_style)
+        self.btn_save_env.clicked.connect(self.save_environment)
+
+        self.btn_wipe_env = QPushButton("🧨 Wipe Environment")
+        self.btn_wipe_env.setStyleSheet(btn_style)
+        self.btn_wipe_env.clicked.connect(self.wipe_environment)
+
+        # Add with stretches so they spread evenly
+        actions_row.addStretch(1)
+        actions_row.addWidget(self.btn_load_req)
+        actions_row.addStretch(1)
+        actions_row.addWidget(self.btn_save_env)
+        actions_row.addStretch(1)
+        actions_row.addWidget(self.btn_wipe_env)
+        actions_row.addStretch(1)
+
+        main_layout.addLayout(actions_row)
+
+    def install_requirements_txt(self):
+        # Pick a requirements.txt
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Install from requirements.txt",
+            "",
+            "Text files (*.txt);;All files (*.*)"
+        )
+        if not path:
+            return
+
+        # Confirm
+        confirm = QMessageBox.question(
+            self,
+            "Install Dependencies",
+            f"Install all dependencies listed in:\n{path} ?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        def run_install():
+            # Mirror your install pattern (same python, capture, text)
+            result = subprocess.run(
+                [self.controller.project.python_path, "-m", "pip", "install", "-r", path],
+                capture_output=True,
+                text=True
+            )
+
+            def handle_result():
+                if result.returncode == 0:
+                    QMessageBox.information(self, "Success", f"Installed dependencies from:\n{path}")
+                else:
+                    # Show stderr; pip often writes useful info there
+                    QMessageBox.critical(self, "Error",
+                                        f"Failed to install from requirements.txt:\n{result.stderr}")
+                self.populate_installed_packages()
+
+            QTimer.singleShot(0, handle_result)
+
+        threading.Thread(target=run_install, daemon=True).start()
+
+
+    def save_environment(self):
+        # Pick where to save
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Current Environment (requirements.txt)",
+            str(Path(self.controller.project.base_path) / "requirements.txt"),
+            "Text files (*.txt);;All files (*.*)"
+        )
+        if not path:
+            return
+
+        def run():
+            result = subprocess.run(
+                [self.controller.project.python_path, "-m", "pip", "freeze"],
+                capture_output=True,
+                text=True
+            )
+            err = None
+            if result.returncode == 0:
+                try:
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(result.stdout)
+                except Exception as e:
+                    err = str(e)
+
+            def done():
+                if result.returncode == 0 and not err:
+                    QMessageBox.information(self, "Exported", f"Saved to:\n{path}")
+                else:
+                    QMessageBox.critical(self, "Error", f"Failed to save requirements.txt:\n{err or result.stderr}")
+            QTimer.singleShot(0, done)
+
+        threading.Thread(target=run, daemon=True).start()
+
+
+    def wipe_environment(self):
+        confirm = QMessageBox.question(
+            self,
+            "Wipe Environment",
+            "This will uninstall ALL packages except pip/setuptools/wheel.\nProceed?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        pybin = self.controller.project.python_path
+
+        def run():
+            freeze = subprocess.run(
+                [pybin, "-m", "pip", "freeze"],
+                capture_output=True,
+                text=True
+            )
+            if freeze.returncode != 0:
+                code = 1
+                out = freeze.stderr
+            else:
+                lines = [ln.strip() for ln in freeze.stdout.splitlines() if ln.strip()]
+                pkgs = []
+                for ln in lines:
+                    # Ignore comments/editable lines/flags
+                    if ln.startswith("#") or ln.startswith("-e ") or ln.startswith("-f ") or ln.startswith("--"):
+                        continue
+                    # Get bare package name (handle extras and various spec formats)
+                    token = (ln.split(" @ ")[0]
+                            .split("===")[0]
+                            .split("==")[0]
+                            .split(">=")[0]
+                            .split("<=")[0]
+                            .split("~=")[0]
+                            .split(";")[0]
+                            .strip())
+                    token = token.split("[")[0].strip()  # drop extras like pkg[foo]
+                    if token and token.lower() not in {"pip", "setuptools", "wheel"}:
+                        pkgs.append(token)
+
+                if pkgs:
+                    chunks = [pkgs[i:i+80] for i in range(0, len(pkgs), 80)]
+                    outs = []
+                    code = 0
+                    for chunk in chunks:
+                        proc = subprocess.run(
+                            [pybin, "-m", "pip", "uninstall", "-y", *chunk],
+                            capture_output=True,
+                            text=True
+                        )
+                        outs.append(proc.stdout if proc.returncode == 0 else proc.stderr)
+                        if proc.returncode != 0:
+                            code = proc.returncode
+                            break
+                    out = "\n".join(outs)
+                else:
+                    code = 0
+                    out = "No third-party packages found."
+
+            def done():
+                if code == 0:
+                    QMessageBox.information(self, "Environment Wiped",
+                                            "All third-party packages have been uninstalled.\n" + out[:4000])
+                else:
+                    QMessageBox.critical(self, "Wipe Failed", out[:4000])
+                self.populate_installed_packages()
+            QTimer.singleShot(0, done)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def save_project(self, name, project_type):
+        self.controller.project.name =  name
+        self.controller.project.project_type = project_type
+        self.controller.project.save()
+        print('Project is saved')
+        
     def browse_directory(self):
         directory = QFileDialog.getExistingDirectory(self, "Select Directory")
         if directory:
