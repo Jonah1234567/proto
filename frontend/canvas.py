@@ -199,9 +199,9 @@ class Canvas(QGraphicsView):
     def add_block(self, name=""):
         self.modified.emit()
 
-        print("hiii")
-        if name == "":
-            name = f"Block {len(self.blocks) + 1}"
+        
+        if name == False:
+            name = "Block" + str(len(self.blocks) + 1)
         print(name)
         block = Block(name, self.tab_widget, self, background_color="#74b9ff", controller=self.controller)
         block.setPos(50 + len(self.blocks) * 20, 100)
@@ -212,7 +212,7 @@ class Canvas(QGraphicsView):
         self.modified.emit()
 
         name = f"Variable Block {len(self.blocks) + 1}"
-        block = Block(name, self.tab_widget, background_color="#ffeaa7", controller=self.controller)
+        block = Block(name, self.tab_widget, self,  background_color="#ffeaa7", controller=self.controller)
         block.block_type = "variable"
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)
