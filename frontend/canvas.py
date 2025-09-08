@@ -200,9 +200,9 @@ class Canvas(QGraphicsView):
         self.modified.emit()
 
         
-        if name == False:
+        if name == "": ##Idk remove this maybe
             name = "Block" + str(len(self.blocks) + 1)
-        print(name)
+        
         block = Block(name, self.tab_widget, self, background_color="#74b9ff", controller=self.controller)
         block.setPos(50 + len(self.blocks) * 20, 100)
         self.scene.addItem(block)

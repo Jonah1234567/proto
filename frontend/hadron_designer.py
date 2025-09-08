@@ -242,7 +242,9 @@ class HadronDesignerWindow(QMainWindow):
             self.add_block_button.setFixedWidth(200)
             self.add_block_button.setStyleSheet("font-size: 16px; padding: 10px; color: black; border: 2px solid black; border-radius: 8px;")
             self.add_block_button.setCursor(Qt.CursorShape.PointingHandCursor)
-            self.add_block_button.clicked.connect(canvas.add_block)
+            self.add_block_button.clicked.connect(lambda: canvas.add_block(
+                name= "Block " + str(len(canvas.blocks) + 1)
+            ))
             self.add_block_button.installEventFilter(self)
 
             self.run_button = QPushButton("▶ Run")
