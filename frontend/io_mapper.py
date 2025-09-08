@@ -51,16 +51,17 @@ class IOMapperDialog(QDialog):
 
         lbl_wire = QLabel("Wire")
         lbl_wire.setStyleSheet("color:#000; font-size:12px; margin:0;")
-        self.mode_slider = QSlider(Qt.Orientation.Horizontal)
-        self.mode_slider.setMinimum(0); self.mode_slider.setMaximum(1); self.mode_slider.setValue(self.MODE_MENU)
-        self.mode_slider.setFixedWidth(100)
+       
         lbl_menu = QLabel("Menu")
         lbl_menu.setStyleSheet("color:#000; font-size:12px; margin:0;")
 
         head.addWidget(lbl_wire)
-        head.addWidget(self.mode_slider)
         head.addWidget(lbl_menu)
         main.addLayout(head)
+        
+        # Add it to your header layout (where the slider used to be)
+        # head.addWidget(lbl_wire); head.addWidget(self.mode_btn); head.addWidget(lbl_menu)
+
 
         # --- Filter + buttons ---
         toolbar = QHBoxLayout()
@@ -76,15 +77,63 @@ class IOMapperDialog(QDialog):
         main.addWidget(self._divider())
 
         # --- Stacked views (WIRE / MENU) ---
-        self.stack = QStackedWidget()
-        self.menu_view = self._build_menu_view()
+        self.MODE_WIRE = 0
+        self.MODE_MENU = 1
+
+        # Build the stack FIRST
+        self.stack = QStackedWidget(self)
         self.wire_view = self._build_wire_view()
+        self.menu_view = self._build_menu_view()
         self.stack.addWidget(self.wire_view)
         self.stack.addWidget(self.menu_view)
-        self.stack.setCurrentIndex(self.MODE_MENU)
+        self.stack.setCurrentIndex(self.MODE_MENU)  # default to Menu
+
+
+        # --- Header: binary slider + labels ---
+        head = QHBoxLayout()
+
+        title = QLabel(f"<b>{getattr(block, 'name', 'Block')}</b> • {len(self._inputs)} inputs • {len(self._upstreams)} upstream outputs")
+        title.setStyleSheet("color:#000; font-size:16px; font-weight:600; margin:0;")
+        head.addWidget(title, 1)
+
+        row = QHBoxLayout()
+        row.setContentsMargins(0,0,0,0)
+        row.setSpacing(8)
+
+        self.lbl_wire = QLabel("Wire")
+        self.lbl_wire.setStyleSheet("color:#000; font-size:12px;")
+
+        self.mode_slider = QSlider(Qt.Orientation.Horizontal)
+        self.mode_slider.setRange(0, 1)          # binary
+        self.mode_slider.setSingleStep(1)
+        self.mode_slider.setPageStep(1)
+        self.mode_slider.setFixedSize(64, 22)
+        self.mode_slider.setValue(self.MODE_MENU)  # start at Menu (1)
+        self.mode_slider.setStyleSheet("""
+        QSlider::groove:horizontal {
+            height: 18px; background:#e6e6e6; border:1px solid #aaa; border-radius:9px; margin:0 0;
+        }
+        QSlider::handle:horizontal {
+            width: 22px; background:#fff; border:1px solid #888; border-radius:11px; margin:-3px 0; /* overlap for round look */
+        }
+        QSlider::sub-page:horizontal { background: transparent; }
+        QSlider::add-page:horizontal { background: transparent; }
+        """)
+
+        self.lbl_menu = QLabel("Menu")
+        self.lbl_menu.setStyleSheet("color:#000; font-size:12px;")
+
+        row.addWidget(self.lbl_wire)
+        row.addWidget(self.mode_slider)
+        row.addWidget(self.lbl_menu)
+
+        head.addLayout(row, 0)
+        main.addLayout(head)
+
+        # later in layout:
         main.addWidget(self.stack, 1)
 
-        main.addWidget(self._divider())
+
 
         # --- Footer ---
         footer = QHBoxLayout()
@@ -135,7 +184,6 @@ class IOMapperDialog(QDialog):
         """)
 
         # --- Wire up ---
-        self.mode_slider.valueChanged.connect(self._on_mode_change)
         self.btn_close.clicked.connect(self.accept)
         self.btn_save.clicked.connect(self._save_and_close)
         self.btn_clear.clicked.connect(self._clear_all)
@@ -144,10 +192,24 @@ class IOMapperDialog(QDialog):
 
         # Load saved mappings (applies to both views)
         self._load_saved_into_views()
+        self.mode_slider.valueChanged.connect(self._sync_mode_from_slider)
+        # initialize label state
+        self._sync_mode_from_slider(self.mode_slider.value())
 
     # ======================
     # Helpers & data access
     # ======================
+    def _sync_mode_from_slider(self, v: int):
+        # v = 0 -> Wire, v = 1 -> Menu
+        self.stack.setCurrentIndex(self.MODE_MENU if v == 1 else self.MODE_WIRE)
+        # bold the active label
+        self.lbl_wire.setStyleSheet(f"color:#000; font-size:12px; font-weight:{'600' if v == 0 else '400'};")
+        self.lbl_menu.setStyleSheet(f"color:#000; font-size:12px; font-weight:{'600' if v == 1 else '400'};")
+
+    
+
+
+
 
     def _get_inputs(self, block):
         ins = getattr(block, "inputs", None)
