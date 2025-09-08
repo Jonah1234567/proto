@@ -206,10 +206,6 @@ class IOMapperDialog(QDialog):
         self.lbl_wire.setStyleSheet(f"color:#000; font-size:12px; font-weight:{'600' if v == 0 else '400'};")
         self.lbl_menu.setStyleSheet(f"color:#000; font-size:12px; font-weight:{'600' if v == 1 else '400'};")
 
-    
-
-
-
 
     def _get_inputs(self, block):
         ins = getattr(block, "inputs", None)
