@@ -42,6 +42,49 @@ class BlockEditor(QWidget):
         self.code_input.textChanged.connect(self.modified.emit)
         self.layout.addWidget(self.code_input)
 
+        self.code_input.setStyleSheet("""
+        QTextEdit {
+            background: white;
+            color: black;
+            font-family: Consolas, monospace;
+            font-size: 13px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 4px;
+        }
+
+        QScrollBar:vertical {
+            border: none;
+            background: #f0f0f0;
+            width: 10px;
+            margin: 0px 0px 0px 0px;
+            border-radius: 5px;
+        }
+
+        QScrollBar::handle:vertical {
+            background: #b0bec5;
+            min-height: 20px;
+            border-radius: 5px;
+        }
+
+        QScrollBar::handle:vertical:hover {
+            background: #90a4ae;
+        }
+
+        QScrollBar::handle:vertical:pressed {
+            background: #78909c;
+        }
+
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            height: 0px;
+        }
+
+        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+            background: none;
+        }
+        """)
+
+
         self.layout.addWidget(QLabel("Inputs:"))
         self.input_list = QListWidget()
         inputs = block.inputs.to_list()

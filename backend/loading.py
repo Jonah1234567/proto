@@ -33,7 +33,7 @@ def load_file(self, filename, controller):
         block = Block(block_data["name"], self.tab_widget, self,  controller=controller)
         block.block_type = block_data["block_type"]
         block.id = block_data["id"]
-        block.dependencies =  block_data.get("dependencies", [])
+        block.requirements =  block_data.get("requirements", [])
         block.background_color = block_data["background_color"]
         block.code = block_data.get("code", "")
         block.inputs = InputsProxy()
@@ -59,7 +59,7 @@ def load_block_from_template(self, template, controller):
     name = template.get("name", "Unnamed Block")
     code = template.get("code", "")
     block_type = template.get("block_type", "code")
-    dependencies = template.get("depenedencies", [])
+    requirements = template.get("depenedencies", [])
     background_color =  template.get("background_color", "#74b9ff")
     inputs = InputsProxy()
     inputs.from_dict(template.get("inputs", {}))
