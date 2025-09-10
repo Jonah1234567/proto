@@ -19,7 +19,7 @@ from backend.outputs_proxy import OutputsProxy
 from backend.saving import save_to_template
 
 class Block(QGraphicsObject):
-    def __init__(self, name, tab_widget, canvas, background_color="#74b9ff", controller=None):
+    def __init__(self, name, tab_widget, canvas, background_color="#74b9ff", controller=None, dependencies=[]):
         super().__init__()
         self.controller=controller
         self.id = str(uuid.uuid4())  # assign unique ID
@@ -42,6 +42,7 @@ class Block(QGraphicsObject):
         self.is_start_block = False
         self.background_color= background_color
         self.filepath = None
+        self.dependencies=[]
 
 
 

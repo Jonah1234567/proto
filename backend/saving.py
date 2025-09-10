@@ -23,6 +23,7 @@ def save_file(self, filename):
                 "outputs": block.outputs.to_dict() if hasattr(block.outputs, "to_dict") else {},
                 "input_mappings": block.input_mappings if hasattr(block, "input_mappings") else {},
                 "is_start_block": getattr(block, "is_start_block", False),
+                "dependencies": block.dependencies,
             })
 
         
@@ -63,7 +64,8 @@ def save_to_template(block):
         "background_color": block.background_color,
         "inputs": block.inputs.to_dict(),
         "outputs": block.outputs.to_dict(),
-        "input_mappings": block.input_mappings
+        "input_mappings": block.input_mappings,
+        "dependencies": block.dependencies
     }
 
     with open(path, "w", encoding="utf-8") as f:
