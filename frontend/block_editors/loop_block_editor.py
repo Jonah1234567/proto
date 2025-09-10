@@ -9,8 +9,11 @@ from backend.outputs_proxy import OutputsProxy
 import sys
 from pathlib import Path
 from PyQt6.QtGui import QShortcut, QKeySequence
+
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 from backend.saving import save_to_template
+from frontend.block_editors.requirements_editor import RequirementsEditor
+
 
 class LoopBlockEditor(QWidget):
     modified = pyqtSignal()
@@ -79,6 +82,19 @@ class LoopBlockEditor(QWidget):
         # === Load existing code ===
         self.load_from_block()
 
+        self.req_editor = RequirementsEditor(
+            self,
+            block=self.block,           # loads from block.requirements by default
+            attr_name="requirements",   # or "dependencies" if you prefer that name
+            title="Requirements (pip packages)",
+        )
+        self.req_editor.modified.connect(self.modified.emit)  # bubble up edits
+        self.layout.addWidget(self.req_editor)
+
+        self.block.requirements = self.req_editor.get_requirements()
+        self.block.update()
+
+
 
     def generate_loop_code(self):
         loop_type = self.loop_type_selector.currentText()
@@ -130,6 +146,7 @@ class LoopBlockEditor(QWidget):
 
         self.block.inputs.set_names(inputs)
         self.block.outputs.set_names(outputs)
+        self.block.requirements = self.req_editor.get_requirements()
         self.block.update()
         print(f"💾 Saved block '{self.block.name}'")
         self.saved.emit()

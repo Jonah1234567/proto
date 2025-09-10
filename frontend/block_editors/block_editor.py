@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QLineEdit, QTextEdit,
-    QPushButton, QListWidget, QListWidgetItem, QInputDialog, QMessageBox
+    QPushButton, QListWidget, QListWidgetItem, QInputDialog, QMessageBox, QGroupBox, QHBoxLayout
 )
 from PyQt6.QtCore import pyqtSignal
 import re
@@ -18,6 +18,8 @@ sys.path.append(str(Path(__file__).resolve().parents[2]))
 from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
 from backend.saving import save_to_template
+
+from frontend.block_editors.requirements_editor import RequirementsEditor
 
 class BlockEditor(QWidget):
     modified = pyqtSignal()
@@ -153,6 +155,20 @@ class BlockEditor(QWidget):
         after_list.setDisabled(True)
         self.layout.addWidget(after_list)
 
+        self.req_editor = RequirementsEditor(
+            self,
+            block=self.block,           # loads from block.requirements by default
+            attr_name="requirements",   # or "dependencies" if you prefer that name
+            title="Requirements (pip packages)",
+        )
+        self.req_editor.modified.connect(self.modified.emit)  # bubble up edits
+        self.layout.addWidget(self.req_editor)
+
+        self.block.requirements = self.req_editor.get_requirements()
+        self.block.update()
+
+
+
 
 
 
@@ -196,9 +212,13 @@ class BlockEditor(QWidget):
         for out in outputs:
             self.output_list.addItem(out)
 
+
         # === Update block data
         self.block.inputs.set_names(inputs)
         self.block.outputs.set_names(outputs)
+        # === Save requirements
+        self.block.requirements = self.req_editor.get_requirements()
+
         self.block.update()
         print(f"💾 Saved block '{self.block.name}'")
         self.saved.emit()

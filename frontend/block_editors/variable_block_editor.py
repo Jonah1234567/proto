@@ -14,6 +14,8 @@ sys.path.append(str(Path(__file__).resolve().parents[2]))
 from backend.inputs_proxy import InputsProxy
 from backend.outputs_proxy import OutputsProxy
 from backend.saving import save_to_template
+from frontend.block_editors.requirements_editor import RequirementsEditor
+
 
 class VariableBlockEditor(QWidget):
     modified = pyqtSignal()
@@ -63,6 +65,19 @@ class VariableBlockEditor(QWidget):
         self.generated_code_output.hide()
         self.load_from_block()
         self.layout.addWidget(self.generated_code_output)
+
+        self.req_editor = RequirementsEditor(
+            self,
+            block=self.block,           # loads from block.requirements by default
+            attr_name="requirements",   # or "dependencies" if you prefer that name
+            title="Requirements (pip packages)",
+        )
+        self.req_editor.modified.connect(self.modified.emit)  # bubble up edits
+        self.layout.addWidget(self.req_editor)
+
+        self.block.requirements = self.req_editor.get_requirements()
+        self.block.update()
+
 
     # =================== Variable UI ===================
 
@@ -182,6 +197,7 @@ class VariableBlockEditor(QWidget):
         # Update the block's outputs
         self.block.outputs = OutputsProxy()
         self.block.outputs.set_names(outputs)
+        self.block.requirements = self.req_editor.get_requirements()
 
         # Redraw block
         self.block.update()

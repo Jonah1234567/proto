@@ -43,7 +43,7 @@ def save_to_template(block):
     pth = None
     if block.filepath != None:
          pth = block.filepath
-
+    print(block.requirements, "hiiii1")
     path, _ = QFileDialog.getSaveFileName(
         None,
         "Save Block as Template",
