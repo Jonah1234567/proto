@@ -18,6 +18,28 @@ from PyQt6.QtWidgets import QMenu
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSizePolicy
 from PyQt6.QtCore import Qt
 from pathlib import Path
+from PyQt6.QtCore import Qt, QStringListModel
+
+
+SUGGESTED_LIBRARIES = [
+    # Core & scientific
+    "numpy","pandas","matplotlib","scipy","scikit-learn","sympy","numba","xarray",
+    # DL/ML/AI
+    "torch","torchvision","torchaudio","tensorflow","keras","jax","flax","transformers",
+    "accelerate","diffusers","sentence-transformers","lightning","xgboost","catboost","lightgbm",
+    # Data & viz
+    "polars","seaborn","plotly","bokeh","altair","streamlit","dash",
+    # NLP/CV/Audio utils
+    "spacy","nltk","tesseract","pytesseract","opencv-python","mediapipe","paddleocr","librosa",
+    # Web & APIs
+    "fastapi","uvicorn","starlette","flask","requests","httpx","aiohttp","beautifulsoup4",
+    # Dev & packaging
+    "pytest","black","ruff","mypy","pydantic","typer","rich","loguru","pre-commit",
+    # Data engineering
+    "sqlalchemy","psycopg2-binary","pymongo","redis","duckdb","pyarrow","deltalake","great-expectations",
+    # Jupyter
+    "jupyter","ipykernel","notebook","jupyterlab",
+]
 
 
 class HadronProjectConfiguration(QWidget):
@@ -147,7 +169,6 @@ class HadronProjectConfiguration(QWidget):
         # Package search bar with auto-completion
         self.package_search = QLineEdit()
         self.package_search.setPlaceholderText("Search package name...")
-        self.package_search.textChanged.connect(self.update_package_completions)
 
         # Version entry
         self.version_input = QLineEdit()
@@ -163,13 +184,19 @@ class HadronProjectConfiguration(QWidget):
         install_box.setLayout(install_layout)
         main_layout.addWidget(install_box)
 
-        # Set up completer
-        self.package_completer = QCompleter()
+        # --- Install New Package section above stays the same until here ---
+
+        # Set up completer (backed by a QStringListModel)
+        self.package_model = QStringListModel(self)
+        self.package_model.setStringList(sorted(set(SUGGESTED_LIBRARIES)))
+
+        self.package_completer = QCompleter(self.package_model, self)
         self.package_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.package_completer.setFilterMode(Qt.MatchFlag.MatchContains)            # match substrings
+        self.package_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+
         self.package_search.setCompleter(self.package_completer)
 
-        self.package_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.package_table.customContextMenuRequested.connect(self.show_context_menu)
 
         
         # --- Actions Row ---
@@ -477,25 +504,6 @@ class HadronProjectConfiguration(QWidget):
             QTimer.singleShot(0, handle_result)
 
         threading.Thread(target=run_install).start()
-
-
-
-    def update_package_completions(self):
-        query = self.package_search.text().strip()
-        if not query:
-            return
-
-        def fetch():
-            try:
-                resp = requests.get(f"https://pypi.org/search/?q={query}", headers={"Accept": "application/vnd.pypi.simple.v1+json"})
-                if resp.status_code == 200:
-                    data = resp.json()
-                    names = [pkg["name"] for pkg in data.get("projects", [])]
-                    self.package_completer.model().setStringList(names)
-            except Exception:
-                pass
-
-        threading.Thread(target=fetch).start()
     
     
     def show_context_menu(self, position):
