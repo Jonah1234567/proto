@@ -18,7 +18,18 @@ from PyQt6.QtWidgets import QMenu
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSizePolicy
 from PyQt6.QtCore import Qt
 from pathlib import Path
-from PyQt6.QtCore import Qt, QStringListModel
+from PyQt6.QtCore import Qt, QStringListModel, QTimer
+import threading, requests
+import re, threading, requests
+from PyQt6.QtCore import QTimer, QStringListModel, Qt
+try:
+    from packaging.version import Version as _SemVer
+    from packaging.utils import canonicalize_name as _canon
+except Exception:
+    _SemVer = None
+    def _canon(s):  # minimal fallback normalization
+        return re.sub(r"[-_.]+", "-", s or "").lower()
+
 
 
 SUGGESTED_LIBRARIES = [
@@ -197,8 +208,39 @@ class HadronProjectConfiguration(QWidget):
 
         self.package_search.setCompleter(self.package_completer)
 
+       # Version completer + model
+        self.SUGGESTED_VERSIONS=[]
+        self.version_model = QStringListModel(self)
+        self.version_model.setStringList(sorted(set(self.SUGGESTED_VERSIONS)))
+        self.version_completer = QCompleter(self.version_model, self)
+        self.version_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.version_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        self.version_input.setCompleter(self.version_completer)
 
-        
+        # Optional: debounce for lookups while typing
+        self._ver_timer = QTimer(self); self._ver_timer.setSingleShot(True)
+        self._ver_timer.timeout.connect(self._refresh_versions_for_current_package)
+        self.package_search.textChanged.connect(lambda _t: self._ver_timer.start(250))
+
+        # Also refresh immediately when a package is chosen from the package completer
+        if hasattr(self, "package_completer"):
+            self.package_completer.activated[str].connect(self._refresh_versions_for)
+
+        popup_style = """
+        QListView {
+            background-color: white;
+            color: black;
+            selection-background-color: #0078d7; /* Windows blue highlight */
+            selection-color: white;              /* text color when selected */
+            border: 1px solid #888;
+        }
+        """
+
+        self.package_completer.popup().setStyleSheet(popup_style)
+        self.version_completer.popup().setStyleSheet(popup_style)
+
+
+                        
         # --- Actions Row ---
         actions_row = QHBoxLayout()
         actions_row.setSpacing(20)  # extra spacing between buttons
@@ -240,6 +282,66 @@ class HadronProjectConfiguration(QWidget):
         actions_row.addStretch(1)
 
         main_layout.addLayout(actions_row)
+
+    def _schedule_version_refresh(self, delay_ms: int = 250):
+        # restart debounce timer
+        self._ver_timer.start(delay_ms)
+
+    def _refresh_versions_for_current_package(self):
+        name = self.package_search.text().strip()
+        if not name:
+            self.version_model.setStringList([])
+            return
+        self._refresh_versions_for(name)
+
+    def _refresh_versions_for(self, pkg_name: str):
+        # call your endpoint that returns {"versions": [...]}
+        def fetch():
+            versions = []
+            try:
+                # === YOUR ENDPOINT HERE ===
+                # Example: Simple API or your own proxy that returns {"versions": [...]}
+                # resp = requests.get(f"https://<your-endpoint>/{pkg_name}", timeout=6)
+                # For illustration, I'll use the Simple API JSON and *simulate* a 'versions' key:
+                resp = requests.get(
+                    f"https://pypi.org/simple/{pkg_name}/",
+                    headers={"Accept": "application/vnd.pypi.simple.v1+json",
+                            "User-Agent": "ProtoInstaller/1.0 (PyQt6)"},
+                    timeout=6,
+                )
+                if resp.status_code == 200:
+                    data = resp.json() or {}
+                    # If your endpoint already returns {"versions": [...]}, do this:
+                    versions = list(data.get("versions", []))
+
+                    # If you’re actually using Simple API JSON (which gives "files"),
+                    # you can keep your current extractor and then assign to `versions`.
+
+                # Optional: sort newest-first (semantic if packaging is available)
+                try:
+                    from packaging.version import Version as _V
+                    versions.sort(key=lambda v: _V(str(v)), reverse=True)
+                except Exception:
+                    versions.sort(reverse=True)
+
+                # Cap list for UI sanity
+                if len(versions) > 50:
+                    versions = versions[:50]
+                print(versions)
+
+            except Exception:
+                versions = []
+
+            # Push to the completer model on the UI thread
+            self.version_model.setStringList(sorted(set(versions)))
+            
+
+        threading.Thread(target=fetch, daemon=True).start()
+
+    def clear_versions_if_blank(self, text: str):
+        if not text.strip():
+            self.version_model.setStringList([])
+
 
     def install_requirements_txt(self):
         # Pick a requirements.txt
