@@ -3,7 +3,21 @@ from PyQt6.QtGui import QPainter, QColor, QWheelEvent, QPen
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtCore import pyqtSignal
 from io_mapper import IOMapperDialog 
+from PyQt6.QtWidgets import QPushButton, QGraphicsDropShadowEffect
+from PyQt6.QtCore import Qt, QPointF
+import sys
+import re
+import importlib.metadata as im
 
+try:
+    from packaging.requirements import Requirement as _PkgRequirement
+    from packaging.utils import canonicalize_name as _canon_name
+except Exception:
+    _PkgRequirement = None
+
+def _canon_name(s: str) -> str:
+    """Fallback normalizer if packaging is missing."""
+    return re.sub(r"[-_.]+", "-", s).lower()
 from connection import Connection
 from connection import ConnectionLine
 import json
@@ -16,6 +30,7 @@ from backend.outputs_proxy import OutputsProxy
 from backend.saving import save_file
 from backend.loading import load_file, load_block_from_template
 from frontend.block import Block
+from frontend.requirements_overview_dialog import RequirementsOverviewDialog
 
 
 class Canvas(QGraphicsView):
@@ -60,6 +75,81 @@ class Canvas(QGraphicsView):
         self._pan_start = QPointF()
         
         self.add_start_block()
+
+        # --- Overlay UI (stays fixed relative to the view) ---
+        self._overlay_margin = 12
+        self._init_requirements_button()
+        self._position_overlay_controls()  # place it once on init
+
+
+    def _init_requirements_button(self):
+        self._req_btn = QPushButton("Check Requirements", self)
+        self._req_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._req_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # don't steal canvas focus
+        self._req_btn.raise_()
+
+        self._req_btn.clicked.connect(self.check_requirements)
+
+        # Visuals: less rounded, subtle hover, slimmer padding
+        self._req_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #f5f6fa;
+                color: #2f3640;
+                border: 1px solid #dcdde1;
+                border-radius: 6px;
+                padding: 5px 10px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #eef1f7;
+                border-color: #c8cbd2;
+            }
+            QPushButton:pressed {
+                background-color: #e6e9f0;
+            }
+        """)
+
+        # Very subtle shadow for separation
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(8)     # smaller blur
+        shadow.setOffset(0, 2)      # gentle offset
+        shadow.setColor(Qt.GlobalColor.black)
+        self._req_btn.setGraphicsEffect(shadow)
+
+    def _position_overlay_controls(self):
+        """Position overlay widgets in the top-right corner of the view."""
+        if not hasattr(self, "_req_btn"):
+            return
+        btn = self._req_btn
+        btn.adjustSize()
+        x = self.viewport().width() - btn.width() - self._overlay_margin
+        y = self._overlay_margin
+        # Place relative to the QGraphicsView, not the scene
+        btn.move(x, y)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._position_overlay_controls()
+
+    def check_requirements(self):
+        """
+        Collect requirements from all blocks and show an overview dialog.
+        Each block may expose:
+          - block.requirements: list[str] like ['numpy', 'pandas==2.2.2']
+        """
+        # Gather required specs across all blocks
+        required: dict[str, set[str]] = {}
+        for blk in getattr(self, "blocks", []):
+            reqs = getattr(blk, "requirements", None) or []
+            for raw in reqs:
+                # Normalize and keep full spec for comparison text
+                name_part = re.split(r"[<>=!~\s]", raw.strip(), maxsplit=1)[0]
+                canon = _canon_name(name_part) if _canon_name else re.sub(r"[-_.]+", "-", name_part).lower()
+                required.setdefault(canon, set()).add(raw.strip())
+
+        dlg = RequirementsOverviewDialog(self, self.controller, required)
+        dlg.exec()
+
 
     def rebuild_wiring(self):
         """
