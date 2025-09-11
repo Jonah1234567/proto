@@ -162,6 +162,12 @@ class HadronProjectConfiguration(QWidget):
         """)
         packages_layout.addWidget(self.package_table)
 
+        self.package_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.package_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.package_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.package_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.package_table.customContextMenuRequested.connect(self.show_context_menu)
+
         # Refresh button
         refresh_button = QPushButton("🔄 Refresh Packages")
         refresh_button.setFixedWidth(200)
