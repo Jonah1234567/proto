@@ -22,6 +22,11 @@ from PyQt6.QtCore import Qt, QStringListModel, QTimer
 import threading, requests
 import re, threading, requests
 from PyQt6.QtCore import QTimer, QStringListModel, Qt
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from backend.utils.requirements_manager import install_requirements_txt, freeze_requirements, uninstall_requirements, get_installed_requirements, install_single_requirement, uninstall_single_requirement
+
+
 try:
     from packaging.version import Version as _SemVer
     from packaging.utils import canonicalize_name as _canon
@@ -371,12 +376,7 @@ class HadronProjectConfiguration(QWidget):
             return
 
         def run_install():
-            # Mirror your install pattern (same python, capture, text)
-            result = subprocess.run(
-                [self.controller.project.python_path, "-m", "pip", "install", "-r", path],
-                capture_output=True,
-                text=True
-            )
+            result = install_requirements_txt(self.controller.project.python_path, path)
 
             def handle_result():
                 if result.returncode == 0:
@@ -404,11 +404,7 @@ class HadronProjectConfiguration(QWidget):
             return
 
         def run():
-            result = subprocess.run(
-                [self.controller.project.python_path, "-m", "pip", "freeze"],
-                capture_output=True,
-                text=True
-            )
+            result = freeze_requirements(self.controller.project.python_path)
             err = None
             if result.returncode == 0:
                 try:
@@ -440,11 +436,7 @@ class HadronProjectConfiguration(QWidget):
         pybin = self.controller.project.python_path
 
         def run():
-            freeze = subprocess.run(
-                [pybin, "-m", "pip", "freeze"],
-                capture_output=True,
-                text=True
-            )
+            freeze = freeze_requirements(self.controller.project.python_path)
             if freeze.returncode != 0:
                 code = 1
                 out = freeze.stderr
@@ -473,11 +465,7 @@ class HadronProjectConfiguration(QWidget):
                     outs = []
                     code = 0
                     for chunk in chunks:
-                        proc = subprocess.run(
-                            [pybin, "-m", "pip", "uninstall", "-y", *chunk],
-                            capture_output=True,
-                            text=True
-                        )
+                        proc = uninstall_requirements(self.controller.project.python_path, chunk)
                         outs.append(proc.stdout if proc.returncode == 0 else proc.stderr)
                         if proc.returncode != 0:
                             code = proc.returncode
@@ -534,12 +522,7 @@ class HadronProjectConfiguration(QWidget):
         print(self.controller.project.python_path)
         self.package_table.setRowCount(0)
         try:
-            result = subprocess.run(
-                [self.controller.project.python_path, "-m", "pip", "list", "--format=json"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            result = get_installed_requirements(self.controller.project.python_path)
             print(result.stdout)
             packages = json.loads(result.stdout)
             for pkg in packages:
@@ -596,11 +579,7 @@ class HadronProjectConfiguration(QWidget):
         package = f"{name}=={version}" if version else name
 
         def run_install():
-            result = subprocess.run(
-                [self.controller.project.python_path, "-m", "pip", "install", "--upgrade", package],
-                capture_output=True,
-                text=True
-            )
+            result = install_single_requirement(self.controller.project.python_path, package)
 
             def handle_result():
                 if result.returncode == 0:
@@ -639,11 +618,7 @@ class HadronProjectConfiguration(QWidget):
 
         if confirm == QMessageBox.StandardButton.Yes:
             def run_uninstall():
-                result = subprocess.run(
-                    [self.controller.project.python_path, "-m", "pip", "uninstall", "-y", package_name],
-                    capture_output=True,
-                    text=True
-                )
+                result =  uninstall_single_requirement(self.controller.project.python_path, package_name)
 
                 def handle_result():
                     if result.returncode == 0:

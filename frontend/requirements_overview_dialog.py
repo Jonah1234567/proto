@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGroupBox, QTreeWidget, QTreeWidgetItem,
     QListWidget, QPushButton, QLabel, QLineEdit, QMessageBox
 )
+from pathlib import Path
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QHeaderView
 from PyQt6.QtGui import QColor, QBrush
@@ -12,7 +13,8 @@ import threading
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QProgressDialog, QMessageBox
 
-import subprocess
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from backend.utils.requirements_manager import collect_installed_requirements, reinstall_packages, install_packages
 # Optional: use packaging to parse requirements & compare versions
 try:
     from packaging.requirements import Requirement as _PkgRequirement
@@ -154,44 +156,12 @@ class RequirementsOverviewDialog(QDialog):
         outer.addLayout(btn_row)
 
         # Data
-        self._installed = self._collect_installed()
-        print(self._collect_installed())
+        self._installed = collect_installed_requirements(self._python_path, _canon_name)
         self._populate_required(required_specs, self._installed)
         self._populate_installed(self._installed)
 
     # ---- Data helpers ----
-    def _collect_installed(self) -> dict:
-        """
-        Collects packages from the SAME environment used for installs
-        (self._python_path -m pip list --format=json). Falls back to
-        importlib.metadata if pip listing fails.
-        Returns: {canonical_name: {'name': str, 'version': str}}
-        """
-        installed: dict[str, dict[str, str]] = {}
-
-        # Preferred: ask pip from the target interpreter
-        
-        res = subprocess.run(
-            [self.controller.project.python_path, "-m", "pip", "list", "--format=json"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        print(self.controller.project.python_path)
-
-        if res.returncode == 0 and res.stdout.strip():
-            data = json.loads(res.stdout)
-            for pkg in data:
-                name = pkg.get("name") or ""
-                ver = pkg.get("version") or ""
-                if name:
-                    canon = _canon_name(name)
-                    installed[canon] = {"name": name, "version": ver}
-            if installed:
-                return installed
-
-        return installed
+    
 
     def _populate_installed(self, installed: dict):
         self.inst_list.clear()
@@ -441,49 +411,11 @@ class RequirementsOverviewDialog(QDialog):
             errors = []
 
             # A) Version mismatches: uninstall (only here), then install
-            for pkg_name, spec in to_uninstall_then_install:
-                print(pkg_name)
-                try:
-                    # Uninstall first (only for mismatches)
-                    res_un = subprocess.run(
-                        [self._python_path, "-m", "pip", "uninstall", "-y", pkg_name],
-                        capture_output=True, text=True,
-                    )
-                    print(res_un)
-                    if res_un.returncode not in (0, 1):
-                        print('errored')
-                        errors.append(f"Uninstall {pkg_name} returned {res_un.returncode}:\n{res_un.stderr.strip() or res_un.stdout.strip()}")
-
-                    # Install desired version (allow bare if spec is '')
-                    target = f"{pkg_name}{spec}"
-                    print(target, pkg_name)
-                    res_in = subprocess.run(
-                        [self._python_path, "-m", "pip", "install", "--upgrade", target],
-                        capture_output=True, text=True,
-                    )
-                    print(res_in)
-                    if res_in.returncode != 0:
-                        ok = False
-                        errors.append(f"Install {target} failed:\n{res_in.stderr.strip() or res_in.stdout.strip()}")
-
-                except Exception as e:
-                    ok = False
-                    errors.append(f"{pkg_name}{spec}: {e}")
+            ok, errors = reinstall_packages(self._python_path, to_uninstall_then_install, ok, errors)
 
             # B) Missing: install directly (no uninstall)
-            for pkg_name, spec in to_install_missing:
-                try:
-                    target = f"{pkg_name}{spec}"
-                    res = subprocess.run(
-                        [self._python_path, "-m", "pip", "install", "--upgrade", target],
-                        capture_output=True, text=True,
-                    )
-                    if res.returncode != 0:
-                        ok = False
-                        errors.append(f"Install {target} failed:\n{res.stderr.strip() or res.stdout.strip()}")
-                except Exception as e:
-                    ok = False
-                    errors.append(f"{pkg_name}{spec}: {e}")
+            ok, errors = install_packages(self._python_path, to_install_missing, ok, errors)
+            
             self.installFinished.emit(ok, errors)
 
 
@@ -512,7 +444,7 @@ class RequirementsOverviewDialog(QDialog):
         self.autofix_btn.setText("Auto-fix Version Mismatches")
 
         # Refresh UI state
-        self._installed = self._collect_installed()
+        self._installed = collect_installed_requirements(self._python_path, _canon_name)
         self._populate_installed(self._installed)
         self._populate_required(self._required_specs_raw, self._installed)
 
