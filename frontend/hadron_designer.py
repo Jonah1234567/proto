@@ -41,6 +41,10 @@ class HadronDesignerWindow(QMainWindow):
         load_action.triggered.connect(self.load_layout_prompt)
         file_menu.addAction(load_action)
 
+        project_settings = QAction("Open Project Settings", self)
+        project_settings.triggered.connect(self.open_project_settings)
+        file_menu.addAction(project_settings)
+
         # === Main Layout ===
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -314,6 +318,12 @@ class HadronDesignerWindow(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(self, "Load Layout", "", "JSON Files (*.json)")
         if path:
             self.canvas.load_layout(path)
+
+    def open_project_settings(self):
+      
+        self.tabs.addTab(self.config_tab, "🛠 Project Config")
+        self.tabs.setCurrentWidget(self.config_tab)
+        
 
 
     def close_tab(self, index):
